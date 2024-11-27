@@ -40,9 +40,7 @@ This project uses a combination of **Convolutional Neural Networks (CNNs)** for 
 
 Here's an example of an image from the **Flickr8k dataset** with a generated caption:
 
-<div style="text-align: center; margin: 20px 0;">
-    <img src="[https://via.placeholder.com/400x400.png?text=Example+Image](https://www.researchgate.net/publication/304407628/figure/fig4/AS:832840551895041@1575576069087/Some-examples-of-inferred-alignments-on-the-Flickr8k-data-The-words-for-each-images.ppm)" alt="Example Image" style="border-radius: 10px;">
-</div>
+![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/images.jpg)
 
 *Generated Caption*: A dog is running across the grass.
 
@@ -53,6 +51,6 @@ Here's an example of an image from the **Flickr8k dataset** with a generated cap
 To get started with this project, clone the repository and follow the installation instructions:
 
 ```bash
-git clone https://github.com/mahdisabetkish/flickr8k-captioning.git
+git clone https://github.com/mahdisabetkish/flickr8k.git
 cd flickr8k-captioning
 
