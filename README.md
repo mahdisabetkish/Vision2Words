@@ -3,13 +3,13 @@ This is my first project to manipulate text and images simultaneously
 # Flickr8k Image Captioning Project
 Welcome to the **Flickr8k Image Captioning** project! This repository contains code for training a model to generate captions for images from the **Flickr8k dataset**. The goal is to build an AI system that can interpret images and generate natural language descriptions.
 
----
+
 
 ## Project Overview
 
 The **Flickr8k dataset** consists of 8,091 images with corresponding captions. Each image in the dataset is annotated with multiple captions describing the content. This project aims to use these images and captions to train an image captioning model.
 
----
+
 
 <!-- Banner Image Section -->
 # Flickr8k Image Captioning
@@ -25,7 +25,7 @@ The **Flickr8k dataset** consists of 8,091 images with corresponding captions. E
 
 
 
----
+
 
 ## Features
 
@@ -33,7 +33,7 @@ The **Flickr8k dataset** consists of 8,091 images with corresponding captions. E
 - **Pretrained Models**: Leverage models trained on the Flickr8k dataset for efficient caption generation.
 - **Easy Setup**: Quick and easy to start with well-documented instructions.
 
----
+
 
 ## How it Works
 
@@ -43,7 +43,7 @@ This project uses a combination of **Convolutional Neural Networks (CNNs)** for 
 2. **Train the Model**: Train a sequence generation model (e.g., LSTM) on the captions.
 3. **Generate Captions**: Use the trained model to generate captions for new images.
 
----
+
 
 ## Example Output
 
@@ -53,7 +53,7 @@ Here's an example of an image from the **Flickr8k dataset** with a generated cap
 
 *Generated Caption*:A motorcycle is cruising through the heart of the desert.
 
----
+
 
 ## Getting Started
 
@@ -65,9 +65,9 @@ You can access Flicker8K dataset using:
 !rm flickr8k.zip
 !echo "Downloaded Flickr8k dataset successfully."
 
----
 
 To get started with this project, clone the repository and follow the installation instructions:
+
 
 ```bash
 git clone https://github.com/mahdisabetkish/flickr8k.git
