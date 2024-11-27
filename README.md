@@ -12,9 +12,8 @@ The **Flickr8k dataset** consists of 8,000 images with corresponding captions. E
 ---
 
 <!-- Banner Image Section -->
-<div style="text-align: center;">
-    <img src="https://www.researchgate.net/profile/David-Harwath/publication/304407628/figure/fig4/AS:832840551895041@1575576069087/Some-examples-of-inferred-alignments-on-the-Flickr8k-data-The-words-for-each-images.ppm" style="width: 100%; max-width: 1200px; border-radius: 10px;">
-</div>
+![Flickr8k Banner](https://github.com/yourusername/yourrepository/blob/main/flickr8k-banner.png)
+
 
 ---
 
