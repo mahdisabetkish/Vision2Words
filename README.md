@@ -7,7 +7,7 @@ Welcome to the **Flickr8k Image Captioning** project! This repository contains c
 
 ## Project Overview
 
-The **Flickr8k dataset** consists of 8,000 images with corresponding captions. Each image in the dataset is annotated with multiple captions describing the content. This project aims to use these images and captions to train an image captioning model.
+The **Flickr8k dataset** consists of 8,091 images with corresponding captions. Each image in the dataset is annotated with multiple captions describing the content. This project aims to use these images and captions to train an image captioning model.
 
 ---
 
@@ -51,7 +51,7 @@ Here's an example of an image from the **Flickr8k dataset** with a generated cap
 
 ![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/image01.jpg)
 
-*Generated Caption*: A dog is running across the grass.
+*Generated Caption*:A motorcycle is cruising through the heart of the desert.
 
 ---
 
