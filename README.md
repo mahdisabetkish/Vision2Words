@@ -12,7 +12,7 @@ The **Flickr8k dataset** consists of 8,000 images with corresponding captions. E
 ---
 
 <!-- Banner Image Section -->
-![test](https://github.com/mahdisabetkish/Flickr-8k/blob/main/images.jpg)
+![test](https://github.com/mahdisabetkish/Flickr-8k/blob/main/image01.jpg)
 
 
 
@@ -40,7 +40,7 @@ This project uses a combination of **Convolutional Neural Networks (CNNs)** for 
 
 Here's an example of an image from the **Flickr8k dataset** with a generated caption:
 
-![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/images.jpg)
+![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/image01.jpg)
 
 *Generated Caption*: A dog is running across the grass.
 
