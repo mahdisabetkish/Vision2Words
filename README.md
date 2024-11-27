@@ -12,7 +12,11 @@ The **Flickr8k dataset** consists of 8,000 images with corresponding captions. E
 ---
 
 <!-- Banner Image Section -->
-![Flickr8k Banner](https://github.com/mahdisabetkish/Flickr-8k/blob/main/images.jpg)
+<div style="text-align: center; margin: 20px 0;">
+    <img src=(https://github.com/mahdisabetkish/Flickr-8k/blob/main/images.jpg)" 
+         alt="Flickr8k Banner" 
+         style="width: 100%; max-width: 1200px; border-radius: 10px; box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);">
+</div>
 
 
 ---
