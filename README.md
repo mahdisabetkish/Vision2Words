@@ -64,7 +64,7 @@ You can access Flicker8K dataset using:
 !unzip -q flickr8k.zip -d ./flickr8k
 !rm flickr8k.zip
 !echo "Downloaded Flickr8k dataset successfully."
-
+```bash
 
 To get started with this project, clone the repository and follow the installation instructions:
 
