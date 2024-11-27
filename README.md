@@ -1,5 +1,5 @@
 # Flickr-8k
-This my first project to manipulate text and images simultaneously 
+This is my first project to manipulate text and images simultaneously 
 # Flickr8k Image Captioning Project
 Welcome to the **Flickr8k Image Captioning** project! This repository contains code for training a model to generate captions for images from the **Flickr8k dataset**. The goal is to build an AI system that can interpret images and generate natural language descriptions.
 
@@ -64,6 +64,8 @@ You can access Flicker8K dataset using:
 !unzip -q flickr8k.zip -d ./flickr8k
 !rm flickr8k.zip
 !echo "Downloaded Flickr8k dataset successfully."
+
+---
 
 To get started with this project, clone the repository and follow the installation instructions:
 
