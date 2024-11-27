@@ -57,6 +57,14 @@ Here's an example of an image from the **Flickr8k dataset** with a generated cap
 
 ## Getting Started
 
+You can access Flicker8K dataset using:
+
+```bash
+!wget "https://github.com/awsaf49/flickr-dataset/releases/download/v1.0/flickr8k.zip"
+!unzip -q flickr8k.zip -d ./flickr8k
+!rm flickr8k.zip
+!echo "Downloaded Flickr8k dataset successfully."
+
 To get started with this project, clone the repository and follow the installation instructions:
 
 ```bash
