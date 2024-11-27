@@ -68,7 +68,7 @@ To get started with this project, clone the repository and follow the installati
 
 
 ```bash
-git clone https://github.com/mahdisabetkish/flickr8k.git
+git clone https://github.com/mahdisabetkish/flickr-8k.git
 cd flickr8k-captioning
 ```
 
