@@ -82,4 +82,9 @@ The LSTM consists of:
 * Input Gate: Determines what new information to store.
 * Output Gate: Controls the output based on the current cell state.
 Each gate uses sigmoid and tanh activation functions to regulate information flow.
-![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/recurrent.png)
+
+<div style="text-align: center;">
+  <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/recurrent.png?raw=true" 
+       alt="Flickr8k Banner" 
+       style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+</div>
