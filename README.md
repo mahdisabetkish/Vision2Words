@@ -13,7 +13,7 @@ The **Flickr8k dataset** consists of 8,091 images with corresponding captions. E
 <!-- Banner Image Section -->
 <!-- Using HTML to resize the image -->
 <div style="text-align: center;">
-  <img src="https://github.com/mahdisabetkish/Flickr-8k/raw/main/images%20(1).jpg?raw=true" 
+  <img src="https://github.com/mahdisabetkish/Flickr-8k/raw/main/Images/images%20(1).jpg?raw=true" 
        alt="Flickr8k Banner" 
        style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
@@ -47,7 +47,7 @@ This project uses a combination of **Convolutional Neural Networks (CNNs)** for 
 
 Here's an example of an image from the **Flickr8k dataset** with a generated caption:
 
-![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/image01.jpg)
+![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/image01.jpg)
 
 *Generated Caption*:A motorcycle is cruising through the heart of the desert.
 
@@ -82,3 +82,4 @@ The LSTM consists of:
 * Input Gate: Determines what new information to store.
 * Output Gate: Controls the output based on the current cell state.
 Each gate uses sigmoid and tanh activation functions to regulate information flow.
+![](https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/recurrent.png)
