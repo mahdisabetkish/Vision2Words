@@ -72,3 +72,13 @@ git clone https://github.com/mahdisabetkish/flickr-8k.git
 cd flickr8k-captioning
 ```
 
+## LSTM part 
+The Long Short-Term Memory (LSTM) network in the context of an image captioning system plays the critical role of converting image features (from the CNN) and textual inputs (captions) into meaningful sequences of words.
+The LSTM consists of:
+
+* Cell State: A memory that carries information through the sequence.
+* Gates: Three key gates control the flow of information:
+* Forget Gate: Decides what information to discard.
+* Input Gate: Determines what new information to store.
+* Output Gate: Controls the output based on the current cell state.
+Each gate uses sigmoid and tanh activation functions to regulate information flow.
