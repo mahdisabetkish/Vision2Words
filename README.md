@@ -31,6 +31,8 @@ The **Flickr8k dataset** consists of 8,091 images with corresponding captions. E
 - **Pretrained Models**: Leverage models trained on the Flickr8k dataset for efficient caption generation.
 - **Easy Setup**: Quick and easy to start with well-documented instructions.
 
+## Dataset
+* The dataset is available on [Flicker8K](https://www.kaggle.com/datasets/nunenuh/flickr8k)
 
 
 ## How it Works
