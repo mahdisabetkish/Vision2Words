@@ -1,5 +1,7 @@
 
 # Flickr8k Image Captioning Project
+🚧This repository is currently being developed.
+
 Welcome to the **Flickr8k Image Captioning** project! This repository contains code for training a model to generate captions for images from the **Flickr8k dataset**. The goal is to build an AI system that can interpret images and generate natural language descriptions.
 
 
