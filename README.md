@@ -76,6 +76,12 @@ git clone https://github.com/mahdisabetkish/flickr-8k.git
 cd flickr8k-captioning
 ```
 ## VGG11 part 
+
+* Feature Extraction with VGG11:
+
+The pretrained VGG11 model is used as a feature extractor to encode images into high-dimensional feature vectors.
+The convolutional layers of VGG11 extract spatial and semantic features, which are then flattened into a fixed-size vector.
+
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/VGG11.jpg?raw=true" 
        alt="Flickr8k Banner" 
