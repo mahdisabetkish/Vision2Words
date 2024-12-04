@@ -75,6 +75,13 @@ To get started with this project, clone the repository and follow the installati
 git clone https://github.com/mahdisabetkish/flickr-8k.git
 cd flickr8k-captioning
 ```
+## VGG11 part 
+<div style="text-align: center;">
+  <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/VGG11.jpg?raw=true" 
+       alt="Flickr8k Banner" 
+       style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+</div>
+
 
 ## LSTM part 
 The Long Short-Term Memory (LSTM) network in the context of an image captioning system plays the critical role of converting image features (from the CNN) and textual inputs (captions) into meaningful sequences of words.
@@ -90,5 +97,5 @@ Each gate uses sigmoid and tanh activation functions to regulate information flo
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/recurrent.png?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 20%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
