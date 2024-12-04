@@ -17,7 +17,7 @@ The **Flickr8k dataset** consists of 8,091 images with corresponding captions. E
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/raw/main/Images/images%20(1).jpg?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 70%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
 
@@ -79,7 +79,7 @@ cd flickr8k-captioning
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/VGG11.jpg?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 75%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
 
@@ -97,5 +97,5 @@ Each gate uses sigmoid and tanh activation functions to regulate information flo
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/recurrent.png?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 20%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 80%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
