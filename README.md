@@ -17,7 +17,7 @@ The **Flickr8k dataset** consists of 8,091 images with corresponding captions. E
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/raw/main/Images/images%20(1).jpg?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 70%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 60%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
 
@@ -83,7 +83,7 @@ The pretrained VGG11 model is used as a feature extractor to encode images into 
 The convolutional layers of VGG11 extract spatial and semantic features, which are then flattened into a fixed-size vector.
 
 <div style="text-align: center;">
-  <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/VGG11.jpg?raw=true" 
+  <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/VGG11.png?raw=true" 
        alt="Flickr8k Banner" 
        style="width: 75%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
