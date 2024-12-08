@@ -114,10 +114,11 @@ RNNs use weights to transform inputs, hidden states, and outputs at each time st
 * Weight Matrix (Wxh): This matrix connects the input at each time step to the hidden state.
 * Weight Matrix (Whh): This matrix connects the hidden state from the previous time step to the current hidden state. It's responsible for passing the "memory" or information between steps.
 * Weight Matrix (Why): This matrix connects the hidden state to the output. It helps the network generate predictions based on the current hidden state.
+
 **5. Biases:**
   
-* Bias for Hidden State (bh): A bias vector added to the hidden state before applying an activation function.
-* Bias for Output (by): A bias vector added to the output before applying the final activation function (such as softmax for classification tasks).
+* Bias for Hidden State (bh): A bias vector is added to the hidden state before applying an activation function.
+* Bias for Output (by): A bias vector is added to the output before applying the final activation function (such as softmax for classification tasks).
 
   
 <div style="text-align: center;">
