@@ -85,9 +85,46 @@ The convolutional layers of VGG11 extract spatial and semantic features, which a
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/VGG11.png?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 75%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
+## RNN part
+**1. Input Size (Input Dimension):**
+   
+* This parameter refers to the number of features in each input at every time step. In text processing, for example, the input size could correspond to the size of the vocabulary, with each input being a one-hot encoded vector representing a character or word.
+
+* Example: If you are working with a vocabulary of 10 unique characters, the input size will be 10 (i.e., a one-hot vector of length 10 for each character).
+
+**2. Hidden Size (Hidden State Dimension):**
+   
+* This is the size of the hidden state vector, which stores the internal memory of the RNN. It determines how much information the network can remember about previous time steps. A larger hidden size means the network has more capacity to capture long-term dependencies, but it may also increase the risk of overfitting.
+
+* Example: If the hidden size is set to 50, then at each time step, the network maintains a hidden state vector of length 50.
+
+**3. Output Size (Output Dimension):**
+   
+* The output size corresponds to the dimension of the output vector at each time step. For many RNNs, the output size is the same as the input size, especially when the task involves predicting the next token in a sequence, such as in character-level language models. However, for tasks like classification, this could be different (e.g., the number of classes).
+
+* Example: In a language model, the output size might be the number of characters in the vocabulary, so if there are 10 unique characters, the output size will also be 10.
+
+**4. Weights (Weight Matrices):**
+   
+RNNs use weights to transform inputs, hidden states, and outputs at each time step. These include:
+
+* Weight Matrix (Wxh): This matrix connects the input at each time step to the hidden state.
+* Weight Matrix (Whh): This matrix connects the hidden state from the previous time step to the current hidden state. It's responsible for passing the "memory" or information between steps.
+* Weight Matrix (Why): This matrix connects the hidden state to the output. It helps the network generate predictions based on the current hidden state.
+**5. Biases:**
+  
+* Bias for Hidden State (bh): A bias vector added to the hidden state before applying an activation function.
+* Bias for Output (by): A bias vector added to the output before applying the final activation function (such as softmax for classification tasks).
+
+  
+<div style="text-align: center;">
+  <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/rnn_1.png?raw=true" 
+       alt="Flickr8k Banner" 
+       style="width: 45%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+</div>
 
 ## LSTM part 
 The Long Short-Term Memory (LSTM) network in the context of an image captioning system plays the critical role of converting image features (from the CNN) and textual inputs (captions) into meaningful sequences of words.
@@ -103,5 +140,5 @@ Each gate uses sigmoid and tanh activation functions to regulate information flo
 <div style="text-align: center;">
   <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/recurrent.png?raw=true" 
        alt="Flickr8k Banner" 
-       style="width: 80%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+       style="width: 60%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
