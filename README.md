@@ -75,7 +75,7 @@ To get started with this project, clone the repository and follow the installati
 git clone https://github.com/mahdisabetkish/flickr-8k.git
 cd flickr8k-captioning
 ```
-## VGG11 part 
+## VGG11
 
 * Feature Extraction with VGG11:
 
@@ -88,7 +88,7 @@ The convolutional layers of VGG11 extract spatial and semantic features, which a
        style="width: 50%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
-## RNN part
+## RNN 
 **1. Input Size (Input Dimension):**
    
 * This parameter refers to the number of features in each input at every time step. In text processing, for example, the input size could correspond to the size of the vocabulary, with each input being a one-hot encoded vector representing a character or word.
@@ -127,7 +127,18 @@ RNNs use weights to transform inputs, hidden states, and outputs at each time st
        style="width: 45%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
-## LSTM part 
+## Multi-layer RNN
+
+* In a multi-layer RNN, each layer receives the output from the previous layer as its input. The first layer processes the raw input sequence, and each subsequent layer refines the representation of the sequence.
+* Each layer's hidden state gets passed to the next layer along with its own state from the previous time step.
+
+<div style="text-align: center;">
+  <img src="https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/Multi-layer-RNN.png?raw=true" 
+       alt="Flickr8k Banner" 
+       style="width: 45%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
+</div>
+
+## LSTM 
 The Long Short-Term Memory (LSTM) network in the context of an image captioning system plays the critical role of converting image features (from the CNN) and textual inputs (captions) into meaningful sequences of words.
 The LSTM consists of:
 
