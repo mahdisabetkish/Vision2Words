@@ -150,7 +150,7 @@ $$ h_t = f(W_{ih} \cdot y_{t-1} + W_{hh} \cdot h_{t-1} + b_h) $$
 
 Here, $\( y_{t-1} \)$ is the ground truth from the previous time step, which speeds up training.
 
-[teacher_forcing]()
+![teacher_forcing](https://github.com/mahdisabetkish/Flickr-8k/blob/main/Images/teacher_forcing.png)
 
 ## LSTM 
 The Long Short-Term Memory (LSTM) network in the context of an image captioning system plays the critical role of converting image features (from the CNN) and textual inputs (captions) into meaningful sequences of words.
