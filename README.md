@@ -138,6 +138,20 @@ RNNs use weights to transform inputs, hidden states, and outputs at each time st
        style="width: 45%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
 
+## Teacher forcing 
+
+In a traditional RNN, the hidden state at time $(t)$ is computed based on the previous hidden state $( h_{t-1} )$ and the current input $( x_t )$:
+
+$$ h_t = f(W_{ih} \cdot x_t + W_{hh} \cdot h_{t-1} + b_h) $$
+
+In teacher forcing, instead of using the model's own prediction at time $\( t-1 \)$, we use the actual target $\( y_{t-1} \)$ as the input for the next time step:
+
+$$ h_t = f(W_{ih} \cdot y_{t-1} + W_{hh} \cdot h_{t-1} + b_h) $$
+
+Here, $\( y_{t-1} \)$ is the ground truth from the previous time step, which speeds up training.
+
+[teacher_forcing]()
+
 ## LSTM 
 The Long Short-Term Memory (LSTM) network in the context of an image captioning system plays the critical role of converting image features (from the CNN) and textual inputs (captions) into meaningful sequences of words.
 The LSTM consists of:
