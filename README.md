@@ -168,3 +168,5 @@ Each gate uses sigmoid and tanh activation functions to regulate information flo
        alt="Flickr8k Banner" 
        style="width: 60%; height: auto; border-radius: 10px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);">
 </div>
+
+## Put all together
