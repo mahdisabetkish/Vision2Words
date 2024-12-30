@@ -170,4 +170,5 @@ Each gate uses sigmoid and tanh activation functions to regulate information flo
 </div>
 
 ## Put all together
-A simpler CNN will be implemented, EfficientNet_b0 
+A simpler CNN will be implemented, EfficientNet_b0
+Calculating the loss using CosinEmbeddingLoss
