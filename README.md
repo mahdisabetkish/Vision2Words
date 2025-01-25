@@ -17,7 +17,7 @@ Welcome to the repository for my **Image Captioning** project! This project leve
 
 Image captioning is a fascinating area of research that combines **Computer Vision** and **Natural Language Processing (NLP)**. The goal is to generate a textual description of an image, which can be useful in various applications like assistive technologies, image indexing, and more.
 
-In this project, I used **EfficientNet-B0** as the backbone for extracting features from images and an **LSTM** network to generate captions based on those features. The model was trained on the **Flickr8k** dataset, which contains 8,000 images, each paired with five different captions.
+In this project, I used **EfficientNet-B0** as the backbone for extracting features from images and an **LSTM** network to generate captions based on those features. The model was trained on the **Flickr8k** dataset, which contains 8,091 images, each paired with five different captions.
 
 ## Project Overview
 
@@ -37,5 +37,4 @@ To get started with this project, follow these steps:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/image-captioning.git
-   cd image-captioning
+   git clone https://github.com/mahdisabetkish/Vision2Words.git
