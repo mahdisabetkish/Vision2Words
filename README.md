@@ -153,7 +153,6 @@ The `Engin` model is designed to efficiently process **image and text inputs** i
 
 This script trains the `Engin` model on the **Flickr8k Dataset**, which combines image and caption data to learn a joint representation. Below is an explanation of the key steps in the training process.
 
----
 
 #### Key Components:
 
@@ -183,8 +182,6 @@ This script trains the `Engin` model on the **Flickr8k Dataset**, which combines
      - Compute the total loss by iterating over 40 tokens and comparing their embeddings with a target similarity of `1` using the loss function.
    - The loss is backpropagated, and the optimizer updates the model weights.
    - Loss values and iteration steps are logged for analysis.
-
----
 
 #### Summary:
 
