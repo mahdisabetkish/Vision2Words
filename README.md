@@ -174,7 +174,7 @@ This script trains the `Engin` model on the **Flickr8k Dataset**, which combines
 
 4. **Training Loop**:
    - The training runs for the specified number of epochs.
-   - Each batch from the DataLoader includes:
+   - In addition to Ids and captions, each batch from the DataLoader includes:
      - `image`: Batch of image tensors.
      - `token`: Tokenized captions, each with five variations (e.g., different descriptions for the same image).
    - For each tokenized caption:
