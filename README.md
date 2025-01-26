@@ -94,4 +94,6 @@ This custom DataLoader is designed for handling **image-caption pairs**, making 
 1. **Initialize the Dataset**:
    ```python
    data = Data(caption_file, image_dir)
+   loader_flicker = DataLoader(data, batch_size=32, shuffle=True, collate_fn=flicker_collate_fn)
+
 
