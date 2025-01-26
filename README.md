@@ -38,3 +38,15 @@ To get started with this project, follow these steps:
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/mahdisabetkish/Vision2Words.git
+
+
+
+# LSTM Neural Network Visualization
+
+Here’s an animated visualization of how an **LSTM Neural Network** works:
+
+<div align="center">
+  <img src="path-to-your-gif.gif" alt="LSTM Neural Network" width="600px" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+</div>
+
+**Figure:** Visualization of the data flow in an LSTM cell.
