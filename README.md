@@ -149,4 +149,50 @@ The `Engin` model combines the power of **EfficientNet-B0** for feature extracti
 #### Summary:
 The `Engin` model is designed to efficiently process **image and text inputs** in a unified framework. It extracts high-level image features using a pre-trained EfficientNet-B0 and combines them with token embeddings, which are then processed by an LSTM to capture sequential relationships. This architecture is useful for tasks such as **image captioning** or **vision-language tasks**.
 
+### Training the Vision-Language Model
+
+This script trains the `Engin` model on the **Flickr8k Dataset**, which combines image and caption data to learn a joint representation. Below is an explanation of the key steps in the training process.
+
+---
+
+#### Key Components:
+
+1. **Data Preparation**:
+   - The `Data` class is used to preprocess images and captions.
+   - Captions are tokenized, padded, and embedded, while images are resized and passed through a feature extractor.
+   - The `loader_flicker` DataLoader is used to create batches of image-caption pairs for training.
+
+2. **Model Initialization**:
+   - The `Engin` model from the `Model` module is instantiated.
+   - Parameters include:
+     - `vocab_size`: Number of unique words in the vocabulary.
+     - `hidden_size`: Dimensionality of the LSTM's hidden state.
+     - `output_size` and `embedd_size`: Sizes for output and embeddings.
+
+3. **Training Setup**:
+   - **Loss Function**: `CosineEmbeddingLoss` is used to minimize the difference in direction (cosine similarity) between predicted and target embeddings.
+   - **Optimizer**: Adam optimizer is configured with a learning rate of `0.001`.
+
+4. **Training Loop**:
+   - The training runs for the specified number of epochs.
+   - Each batch from the DataLoader includes:
+     - `image`: Batch of image tensors.
+     - `token`: Tokenized captions, each with five variations (e.g., different descriptions for the same image).
+   - For each tokenized caption:
+     - Forward pass through the model to generate predicted embeddings (`logits`) and token embeddings.
+     - Compute the total loss by iterating over 40 tokens and comparing their embeddings with a target similarity of `1` using the loss function.
+   - The loss is backpropagated, and the optimizer updates the model weights.
+   - Loss values and iteration steps are logged for analysis.
+
+---
+
+#### Summary:
+
+This code implements a custom training loop for the `Engin` model to jointly learn representations of images and captions using a **vision-language approach**. The model leverages:
+- **EfficientNet-B0** for image feature extraction.
+- **LSTM** for sequential caption modeling.
+- **Cosine Embedding Loss** to align the embeddings of image features and their corresponding captions.
+
+By iterating over the data and optimizing the model parameters, the network learns to align image features with their textual descriptions.
+
 
