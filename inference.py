@@ -37,4 +37,3 @@ generated_caption = [data.i2w[token] for token in caption]
 print("Generated Caption:", " ".join(generated_caption))
 plt.imshow(image[0].permute(1, 2, 0))
 plt.show()
-###
