@@ -11,9 +11,6 @@ Welcome to the repository for my **Image Captioning** project! This project leve
 4. [EfficientNet](#EfficientNet)
 5. [LSTM](#LSTM)
 6. [Details](#details)
-7. [Results](#results)
-8. [Contributing](#contributing)
-9. [License](#license)
 
 ## Introduction
 
