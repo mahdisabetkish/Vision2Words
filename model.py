@@ -65,12 +65,7 @@ class Captioner(nn.Module):
 
         all_logits = torch.stack(all_token, dim=1)
         return all_logits
-<<<<<<< HEAD
         
-=======
-
-
->>>>>>> 953beb5 (this is the first push from Ubuntu and it seems the LSTM works fine)
 vocab_size = len(data.vocab)
 embedd_size = 32
 hidden_size = 64

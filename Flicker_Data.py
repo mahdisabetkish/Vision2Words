@@ -93,4 +93,3 @@ caption_file = '/home/shahmir/Desktop/Vision2words_ubuntu/DATA/captions.txt'
 data = Data(image_dir, caption_file)
 Flicker8k_loader = DataLoader(data, batch_size = 32, shuffle = True, collate_fn = flicker_collate_fn)
 print('Done')
-#>>>>>>> 953beb5 (this is the first push from Ubuntu and it seems the LSTM works fine)
