@@ -31,7 +31,6 @@ The project is divided into the following key components:
 4. **Model Training**: The model is trained using a combination of image features and captions.
 5. **Inference**: The trained model is used to generate captions for new images.
 
-.
 
 ## Installation
 
@@ -64,9 +63,6 @@ EfficientNet-B0 is a convolutional neural network (CNN) designed for high accura
    - It performs well on a wide range of computer vision tasks, such as image classification, object detection, and segmentation.
 
 EfficientNet-B0’s design demonstrates that thoughtful scaling and architecture optimization can lead to better trade-offs between performance and computational cost.
-
-![EfficientNet-B0](https://github.com/mahdisabetkish/Vision2Words/blob/main/Images/Architecture-of-EfficientNet-B0-as-feature-extractor.png)
-
 
 ## LSTM Neural Network
 **Long Short-Term Memory** (LSTM) is a type of recurrent neural network (RNN) designed to handle sequential data, such as time series, text, or speech. Unlike traditional RNNs, LSTMs excel at capturing long-term dependencies by addressing the problem of vanishing gradients during training
