@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Dataset and derived artifacts (downloaded/generated, never committed)
+data/
+checkpoints/
+*.pt
+*.onnx
+
+# Logs
+*.log
+runs/
+
+# Hugging Face cache if pointed at this tree
+.cache/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Nextflow work directories
+work/
+.nextflow/
+.nextflow.log*
