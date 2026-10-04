@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vision2words"
+version = "0.1.0"
+description = "Image captioning on Flickr8k with an EfficientNet-B0 encoder and LSTM/Transformer decoders"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "torch>=2.4",
+    "torchvision>=0.19",
+    "numpy>=1.26",
+    "pillow>=10.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "pandas>=2.0",
+    "pyarrow>=15.0",
+    "huggingface_hub>=0.23",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+metrics = ["pycocoevalcap", "nltk"]
+export = ["onnx>=1.16", "onnxruntime>=1.18"]
+app = ["gradio>=4.0"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+v2w = "vision2words.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
