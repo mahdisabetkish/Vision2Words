@@ -37,3 +37,7 @@ Thumbs.db
 work/
 .nextflow/
 .nextflow.log*
+
+# Local working notes, not part of the project
+/prompt.txt
+/human.txt
