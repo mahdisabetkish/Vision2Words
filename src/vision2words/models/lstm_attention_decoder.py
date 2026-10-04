@@ -47,14 +47,23 @@ class LSTMAttentionDecoder(CaptionDecoder):
         embed_size: int = 256,
         hidden_size: int = 512,
         attn_size: int = 256,
+        context_size: int = 256,
         dropout: float = 0.3,
     ) -> None:
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, embed_size, padding_idx=pad_id)
         self.attention = BahdanauAttention(feature_size, hidden_size, attn_size)
+        # The attention context is computed over the raw 1280-d features (that's
+        # what the energy function scores), but feeding all 1280 dims into the
+        # LSTM cell on every step makes the cell itself ~4M parameters -- too big
+        # to regularize on 6000 training images. Projecting the context down to
+        # context_size first keeps the cell a similar size to the no-attention
+        # baseline's, so attention has to earn its keep on quality, not just add
+        # capacity the data can't support.
+        self.context_proj = nn.Linear(feature_size, context_size)
         self.init_h = nn.Linear(feature_size, hidden_size)
         self.init_c = nn.Linear(feature_size, hidden_size)
-        self.lstm_cell = nn.LSTMCell(embed_size + feature_size, hidden_size)
+        self.lstm_cell = nn.LSTMCell(embed_size + context_size, hidden_size)
         self.dropout = nn.Dropout(dropout)
         self.classifier = nn.Linear(hidden_size, vocab_size)
         # Populated by forward(); read by the attention-map figure in Phase 2's report.
@@ -75,6 +84,7 @@ class LSTMAttentionDecoder(CaptionDecoder):
         attn_steps = []
         for t in range(seq_len):
             context, attn_weights = self.attention(features, h)
+            context = self.dropout(self.context_proj(context))
             lstm_input = torch.cat([embedded[:, t, :], context], dim=1)
             h, c = self.lstm_cell(lstm_input, (h, c))
             logits_steps.append(self.classifier(self.dropout(h)))
@@ -102,6 +112,7 @@ class LSTMAttentionDecoder(CaptionDecoder):
         for _ in range(max_len):
             embedded = self.embedding(current).squeeze(1)
             context, attn_weights = self.attention(features, h)
+            context = self.context_proj(context)
             lstm_input = torch.cat([embedded, context], dim=1)
             h, c = self.lstm_cell(lstm_input, (h, c))
             logits = self.classifier(h)

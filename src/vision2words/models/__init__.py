@@ -48,6 +48,7 @@ def build_decoder(model_config: dict[str, Any], vocab_size: int, pad_id: int) ->
             embed_size=model_config["embed_size"],
             hidden_size=model_config["hidden_size"],
             attn_size=model_config.get("attn_size", 256),
+            context_size=model_config.get("context_size", 256),
             dropout=model_config.get("dropout", 0.3),
         )
     if model_type == "transformer":
