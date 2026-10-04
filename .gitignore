@@ -14,8 +14,9 @@ venv/
 env/
 
 # Dataset and derived artifacts (downloaded/generated, never committed)
-data/
-checkpoints/
+# Anchored to the repo root so this doesn't also match src/vision2words/data.
+/data/
+/checkpoints/
 *.pt
 *.onnx
 
