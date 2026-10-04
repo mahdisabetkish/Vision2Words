@@ -1,0 +1,22 @@
+# Phase 1 baseline: plain LSTM decoder over pooled EfficientNet-B0 features.
+data:
+  raw_dir: data/raw
+  feature_dir: data/features
+  min_word_freq: 5
+
+model:
+  feature_size: 1280
+  embed_size: 256
+  hidden_size: 512
+  num_layers: 1
+  dropout: 0.3
+
+train:
+  device: cuda
+  seed: 1337
+  batch_size: 64
+  num_workers: 2
+  lr: 0.001
+  epochs: 40
+  early_stopping_patience: 5
+  ckpt_dir: checkpoints/lstm_baseline
