@@ -126,6 +126,34 @@ def _add_evaluate(subparsers: argparse._SubParsersAction) -> None:
     p.set_defaults(run=run)
 
 
+def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "build-report", help="results/metrics.json, comparison.md, and the comparison figures"
+    )
+    p.add_argument("--raw-dir", required=True)
+    p.add_argument("--feature-dir", required=True)
+    p.add_argument("--results-dir", default="results")
+    p.add_argument("--lstm-checkpoint", required=True)
+    p.add_argument("--lstm-attention-checkpoint", required=True)
+    p.add_argument("--transformer-checkpoint", required=True)
+    p.add_argument("--device", default="cpu")
+
+    def run(args: argparse.Namespace) -> None:
+        from pathlib import Path
+
+        from vision2words.evaluation.report import build_report
+
+        checkpoints = {
+            "lstm_baseline": Path(args.lstm_checkpoint),
+            "lstm_attention": Path(args.lstm_attention_checkpoint),
+            "transformer": Path(args.transformer_checkpoint),
+        }
+        build_report(args.raw_dir, args.feature_dir, args.results_dir, checkpoints, args.device)
+        print(f"wrote report to {args.results_dir}")
+
+    p.set_defaults(run=run)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="v2w", description="Vision2Words CLI")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable debug logging")
@@ -136,6 +164,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_sample_captions(subparsers)
     _add_caption(subparsers)
     _add_evaluate(subparsers)
+    _add_build_report(subparsers)
 
     return parser
 
