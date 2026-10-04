@@ -154,6 +154,29 @@ def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
     p.set_defaults(run=run)
 
 
+def _add_export_onnx(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("export-onnx", help="export encoder + decoders A/B to ONNX for the C++ port")
+    p.add_argument("--feature-dir", required=True)
+    p.add_argument("--lstm-attention-checkpoint", required=True)
+    p.add_argument("--transformer-checkpoint", required=True)
+    p.add_argument("--out-dir", default="export")
+    p.add_argument("--device", default="cpu")
+
+    def run(args: argparse.Namespace) -> None:
+        from vision2words.inference.export_onnx import export_all
+
+        export_all(
+            args.feature_dir,
+            args.lstm_attention_checkpoint,
+            args.transformer_checkpoint,
+            args.out_dir,
+            args.device,
+        )
+        print(f"exported ONNX graphs + vocab to {args.out_dir}")
+
+    p.set_defaults(run=run)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="v2w", description="Vision2Words CLI")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable debug logging")
@@ -165,6 +188,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_caption(subparsers)
     _add_evaluate(subparsers)
     _add_build_report(subparsers)
+    _add_export_onnx(subparsers)
 
     return parser
 
