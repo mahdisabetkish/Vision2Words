@@ -22,7 +22,7 @@ train:
   lr: 0.001
   weight_decay: 0.00001
   grad_clip_norm: 5.0
-  lr_patience: 2
-  epochs: 40
-  early_stopping_patience: 5
+  lr_patience: 3
+  epochs: 60
+  early_stopping_patience: 10
   ckpt_dir: checkpoints/lstm_baseline
