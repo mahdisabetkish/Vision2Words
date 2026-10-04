@@ -1,0 +1,36 @@
+{
+  "model_type": "transformer",
+  "num_params": 20076525,
+  "mean_train_epoch_seconds": 51.34444444444445,
+  "split": "test",
+  "num_images": 1000,
+  "greedy": {
+    "bleu1": 0.5875743555848751,
+    "bleu2": 0.4033792055721082,
+    "bleu3": 0.27015396192708774,
+    "bleu4": 0.1814127353418288,
+    "cider": 0.4600929647342682,
+    "latency_ms_per_image": 93.86639259988442
+  },
+  "beam": {
+    "bleu1": 0.5991068987514263,
+    "bleu2": 0.41961128539072806,
+    "bleu3": 0.2898518953390011,
+    "bleu4": 0.1977816969889541,
+    "cider": 0.5023564621270655,
+    "latency_ms_per_image": 160.5416524000466,
+    "beam_size": 3
+  },
+  "sample_predictions": {
+    "1056338697_4f7d7ce270.jpg": "a girl in a blue shirt is holding a <UNK>",
+    "106490881_5a2dd9b7bd.jpg": "a boy in blue shorts and white shorts is jumping up in the water",
+    "1082379191_ec1e53f996.jpg": "a man and a woman sit on a bench",
+    "1084040636_97d9633581.jpg": "a white dog is running through a grassy area",
+    "1096395242_fc69f0ae5a.jpg": "a boy is standing in front of a house",
+    "1107246521_d16a476380.jpg": "two black dogs running in the grass",
+    "1119015538_e8e796281e.jpg": "a small white dog is running through the grass",
+    "1122944218_8eb3607403.jpg": "a young boy is holding a <UNK> camera",
+    "1131800850_89c7ffd477.jpg": "a brown and white dog is running through water",
+    "1131932671_c8d17751b3.jpg": "a little boy is jumping on a bed"
+  }
+}

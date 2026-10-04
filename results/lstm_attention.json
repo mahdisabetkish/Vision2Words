@@ -1,0 +1,36 @@
+{
+  "model_type": "lstm_attention",
+  "num_params": 6154478,
+  "mean_train_epoch_seconds": 63.51818181818181,
+  "split": "test",
+  "num_images": 1000,
+  "greedy": {
+    "bleu1": 0.6010252442208529,
+    "bleu2": 0.4158435812398517,
+    "bleu3": 0.2767359891228847,
+    "bleu4": 0.18248316964194214,
+    "cider": 0.4641342315911586,
+    "latency_ms_per_image": 75.93046150007285
+  },
+  "beam": {
+    "bleu1": 0.610340362560062,
+    "bleu2": 0.42967414772642204,
+    "bleu3": 0.2977543866003571,
+    "bleu4": 0.2020295039155245,
+    "cider": 0.5248142470644703,
+    "latency_ms_per_image": 176.00928859994747,
+    "beam_size": 3
+  },
+  "sample_predictions": {
+    "1056338697_4f7d7ce270.jpg": "a young woman wearing a blue shirt is holding a blue and white umbrella",
+    "106490881_5a2dd9b7bd.jpg": "a young boy is running through the water",
+    "1082379191_ec1e53f996.jpg": "a man and woman sit on a bench",
+    "1084040636_97d9633581.jpg": "a white dog is walking on the sand",
+    "1096395242_fc69f0ae5a.jpg": "a young boy in a blue shirt is playing with a <UNK>",
+    "1107246521_d16a476380.jpg": "a black dog is running through a field",
+    "1119015538_e8e796281e.jpg": "a small dog is running through the grass",
+    "1122944218_8eb3607403.jpg": "a young boy with a blue shirt and a white shirt is holding a baby in a white shirt",
+    "1131800850_89c7ffd477.jpg": "a dog is standing in the sand",
+    "1131932671_c8d17751b3.jpg": "a young boy jumping on a bed"
+  }
+}

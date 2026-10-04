@@ -1,0 +1,36 @@
+{
+  "model_type": "lstm",
+  "num_params": 4842733,
+  "mean_train_epoch_seconds": 19.372727272727275,
+  "split": "test",
+  "num_images": 1000,
+  "greedy": {
+    "bleu1": 0.5730316065082688,
+    "bleu2": 0.3913555410720905,
+    "bleu3": 0.25845392865976596,
+    "bleu4": 0.17166313886054044,
+    "cider": 0.4427356437462291,
+    "latency_ms_per_image": 15.435020399978384
+  },
+  "beam": {
+    "bleu1": 0.5895461545429306,
+    "bleu2": 0.4111823940107717,
+    "bleu3": 0.28026897980719334,
+    "bleu4": 0.18798447247566802,
+    "cider": 0.485234258157132,
+    "latency_ms_per_image": 39.36839560000226,
+    "beam_size": 3
+  },
+  "sample_predictions": {
+    "1056338697_4f7d7ce270.jpg": "a woman in a blue shirt is standing in front of a large crowd",
+    "106490881_5a2dd9b7bd.jpg": "a boy in a blue shirt is running through the water",
+    "1082379191_ec1e53f996.jpg": "a man and a woman sit on a bench",
+    "1084040636_97d9633581.jpg": "a white dog is running through a forest",
+    "1096395242_fc69f0ae5a.jpg": "a little boy in a blue shirt is playing with a toy",
+    "1107246521_d16a476380.jpg": "a black dog is running through the grass",
+    "1119015538_e8e796281e.jpg": "a small dog is running through a grassy field",
+    "1122944218_8eb3607403.jpg": "a young boy wearing a blue shirt and a blue shirt is smiling",
+    "1131800850_89c7ffd477.jpg": "a dog is standing in the water",
+    "1131932671_c8d17751b3.jpg": "a little girl in a pink shirt is jumping on a bed"
+  }
+}
