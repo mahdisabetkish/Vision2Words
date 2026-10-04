@@ -1,8 +1,12 @@
 """Shared interface for caption decoders.
 
-Both the LSTM decoder (Phase 2: with Bahdanau attention) and the Transformer
-decoder plug into the same training loop and evaluation code through this
-interface, so swapping one for the other is a config change, not a rewrite.
+The LSTM baseline, the Bahdanau-attention LSTM, and the Transformer decoder
+all plug into the same training loop and evaluation code through this one
+method, so swapping one for the other is a config change, not a rewrite.
+Greedy and beam-search decoding (evaluation/decoding.py) are written once,
+against this interface, instead of once per architecture -- they just call
+``forward`` again on the sequence generated so far and read off the last
+position's logits.
 """
 
 from __future__ import annotations
@@ -18,15 +22,7 @@ class CaptionDecoder(nn.Module, ABC):
 
     @abstractmethod
     def forward(self, features: torch.Tensor, input_tokens: torch.Tensor) -> torch.Tensor:
-        """features: encoder output (shape depends on the decoder).
-        input_tokens: (B, L) token ids, teacher-forced input (targets shifted left by one).
-        returns: (B, L, vocab_size) logits.
-        """
-
-    @abstractmethod
-    def generate_greedy(
-        self, features: torch.Tensor, start_id: int, end_id: int, max_len: int
-    ) -> torch.Tensor:
-        """Greedy-decode one token at a time. Returns (B, <=max_len+1) token ids,
-        starting with start_id.
+        """features: encoder output (pooled (B, D) or spatial (B, 49, D), depending
+        on the decoder). input_tokens: (B, L) token ids, teacher-forced input
+        (targets shifted left by one). Returns (B, L, vocab_size) logits.
         """

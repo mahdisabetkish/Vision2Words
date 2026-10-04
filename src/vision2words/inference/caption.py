@@ -2,7 +2,7 @@
 
 Unlike training and evaluation, this runs the real encoder (there's no
 cached feature for an image the model has never seen), so this is also the
-code path the C++ port and the Hugging Face Space both need to match.
+code path the C++ port, the benchmark, and the Gradio app all need to match.
 """
 
 from __future__ import annotations
@@ -13,31 +13,24 @@ import torch
 from PIL import Image
 
 from vision2words.data.vocabulary import Vocabulary
+from vision2words.evaluation.decoding import beam_search, greedy_decode
+from vision2words.models import build_decoder, feature_mode_for
 from vision2words.models.encoder import EncoderCNN
-from vision2words.models.lstm_decoder import LSTMDecoder
 
 
-def load_lstm_checkpoint(
+def load_model(
     ckpt_path: str | Path, vocab_path: str | Path, device: str = "cpu"
-) -> tuple[EncoderCNN, LSTMDecoder, Vocabulary]:
+) -> tuple[EncoderCNN, torch.nn.Module, Vocabulary, str]:
     vocab = Vocabulary.load(vocab_path)
     checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
-    model_config = checkpoint["model_config"]
+    model_type = checkpoint["model_config"]["type"]
 
-    decoder = LSTMDecoder(
-        vocab_size=len(vocab),
-        pad_id=vocab.pad_id,
-        feature_size=model_config["feature_size"],
-        embed_size=model_config["embed_size"],
-        hidden_size=model_config["hidden_size"],
-        num_layers=model_config.get("num_layers", 1),
-        dropout=model_config.get("dropout", 0.3),
-    ).to(device)
+    decoder = build_decoder(checkpoint["model_config"], vocab_size=len(vocab), pad_id=vocab.pad_id)
     decoder.load_state_dict(checkpoint["model_state"])
-    decoder.eval()
+    decoder = decoder.to(device).eval()
 
     encoder = EncoderCNN(fine_tune=False).to(device).eval()
-    return encoder, decoder, vocab
+    return encoder, decoder, vocab, model_type
 
 
 @torch.no_grad()
@@ -47,15 +40,22 @@ def caption_image(
     vocab_path: str | Path,
     device: str = "cpu",
     max_len: int = 20,
+    beam_size: int = 1,
 ) -> str:
-    encoder, decoder, vocab = load_lstm_checkpoint(ckpt_path, vocab_path, device)
+    encoder, decoder, vocab, model_type = load_model(ckpt_path, vocab_path, device)
+    feature_mode = feature_mode_for(model_type)
     transform = EncoderCNN.preprocess()
 
     image = Image.open(image_path).convert("RGB")
     tensor = transform(image).unsqueeze(0).to(device)
 
-    pooled, _spatial = encoder(tensor)
-    generated = decoder.generate_greedy(pooled, vocab.start_id, vocab.end_id, max_len=max_len)
+    pooled, spatial = encoder(tensor)
+    features = pooled if feature_mode == "pooled" else spatial
+
+    if beam_size > 1:
+        generated = beam_search(decoder, features, vocab.start_id, vocab.end_id, beam_size, max_len)
+    else:
+        generated = greedy_decode(decoder, features, vocab.start_id, vocab.end_id, max_len)
     return vocab.decode(generated[0].tolist())
 
 
@@ -67,9 +67,10 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--vocab", required=True)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--beam-size", type=int, default=1)
     args = parser.parse_args()
 
-    caption = caption_image(args.image, args.checkpoint, args.vocab, args.device)
+    caption = caption_image(args.image, args.checkpoint, args.vocab, args.device, beam_size=args.beam_size)
     print(caption)
 
 

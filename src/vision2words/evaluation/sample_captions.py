@@ -1,7 +1,8 @@
 """Caption a handful of validation images with a trained checkpoint.
 
-This is the Phase 1 checkpoint deliverable: evidence that the model has
-actually learned something from the data, beyond a validation loss number.
+This was the Phase 1 checkpoint deliverable (evidence the model learned
+something beyond a loss number) and now doubles as a quick sanity check for
+any of the three decoders.
 """
 
 from __future__ import annotations
@@ -15,7 +16,15 @@ import torch
 from vision2words.data.dataset import CaptionFeatureDataset
 from vision2words.data.flickr8k import ensure_data, load_captions
 from vision2words.data.vocabulary import Vocabulary
-from vision2words.models.lstm_decoder import LSTMDecoder
+from vision2words.evaluation.decoding import greedy_decode
+from vision2words.models import build_decoder, feature_mode_for
+
+
+def load_checkpoint(ckpt_path: str | Path, vocab: Vocabulary, device: str = "cpu"):
+    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
+    model = build_decoder(checkpoint["model_config"], vocab_size=len(vocab), pad_id=vocab.pad_id)
+    model.load_state_dict(checkpoint["model_state"])
+    return model.to(device).eval(), checkpoint["model_config"]["type"]
 
 
 def sample_captions(
@@ -27,46 +36,33 @@ def sample_captions(
     device: str = "cpu",
     seed: int = 0,
 ) -> list[dict]:
-    ckpt_path = Path(ckpt_path)
     feature_dir = Path(feature_dir)
     vocab = Vocabulary.load(feature_dir / "vocab.json")
-
-    checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
-    model_config = checkpoint["model_config"]
-    model = LSTMDecoder(
-        vocab_size=len(vocab),
-        pad_id=vocab.pad_id,
-        feature_size=model_config["feature_size"],
-        embed_size=model_config["embed_size"],
-        hidden_size=model_config["hidden_size"],
-        num_layers=model_config.get("num_layers", 1),
-        dropout=model_config.get("dropout", 0.3),
-    ).to(device)
-    model.load_state_dict(checkpoint["model_state"])
-    model.eval()
+    model, model_type = load_checkpoint(ckpt_path, vocab, device)
+    feature_mode = feature_mode_for(model_type)
 
     raw_dir = ensure_data(raw_dir)
     captions = load_captions(raw_dir)
-    dataset = CaptionFeatureDataset(feature_dir, split, captions, vocab, feature_mode="pooled")
+    dataset = CaptionFeatureDataset(feature_dir, split, captions, vocab, feature_mode=feature_mode)
 
     rng = random.Random(seed)
-    image_ids = sorted(set(image_id for image_id, _ in dataset.pairs))
+    image_ids = sorted({image_id for image_id, _ in dataset.pairs})
     chosen = rng.sample(image_ids, k=min(num_samples, len(image_ids)))
 
     results = []
-    with torch.no_grad():
-        for image_id in chosen:
-            row = dataset.id_to_row[image_id]
-            feature = torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
-            generated = model.generate_greedy(feature, vocab.start_id, vocab.end_id, max_len=20)
-            predicted = vocab.decode(generated[0].tolist())
-            results.append(
-                {
-                    "image_id": image_id,
-                    "predicted_caption": predicted,
-                    "reference_captions": captions[image_id],
-                }
-            )
+    for image_id in chosen:
+        row = dataset.id_to_row[image_id]
+        feature = torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
+        generated = greedy_decode(model, feature, vocab.start_id, vocab.end_id, max_len=20)
+        predicted = vocab.decode(generated[0].tolist())
+        results.append(
+            {
+                "image_id": image_id,
+                "model_type": model_type,
+                "predicted_caption": predicted,
+                "reference_captions": captions[image_id],
+            }
+        )
     return results
 
 

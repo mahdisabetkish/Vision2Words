@@ -7,8 +7,10 @@ is trained with standard teacher forcing -- the input at each step is the
 scheduled sampling, which the original version of this project used, made
 the loss impossible to compare across runs for no real benefit, so it's
 gone; teacher forcing alone is both simpler and standard practice for this
-kind of model. Phase 2 adds a Bahdanau-attention version of this decoder
-that reads from the spatial feature grid instead of a single pooled vector.
+kind of model. See models/lstm_attention_decoder.py for a Bahdanau-attention
+version that reads from the spatial feature grid instead of a single pooled
+vector. Greedy/beam decoding live in evaluation/decoding.py, shared across
+every decoder in this package.
 """
 
 from __future__ import annotations
@@ -57,7 +59,7 @@ class LSTMDecoder(CaptionDecoder):
         h0, c0 = self.init_state(features)
         embedded = self.dropout(self.embedding(input_tokens))
         output, _ = self.lstm(embedded, (h0, c0))
-        return self.classifier(output)
+        return self.classifier(self.dropout(output))
 
     @torch.no_grad()
     def generate_greedy(
