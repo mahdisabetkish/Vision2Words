@@ -17,6 +17,7 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from vision2words.data.dataset import CaptionFeatureDataset, collate_captions
 from vision2words.data.flickr8k import ensure_data, load_captions, load_split
@@ -105,6 +106,7 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
 
     log_path = ckpt_dir / "training_log.csv"
     log_path.write_text("epoch,train_loss,val_loss,lr,epoch_seconds\n", encoding="utf-8")
+    tb_writer = SummaryWriter(log_dir=str(ckpt_dir / "tensorboard"))
 
     best_val_loss = float("inf")
     epochs_without_improvement = 0
@@ -130,6 +132,9 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
         )
         with open(log_path, "a", encoding="utf-8") as f:
             f.write(f"{epoch},{train_loss:.6f},{val_loss:.6f},{current_lr:.2e},{elapsed:.1f}\n")
+        tb_writer.add_scalar("loss/train", train_loss, epoch)
+        tb_writer.add_scalar("loss/val", val_loss, epoch)
+        tb_writer.add_scalar("lr", current_lr, epoch)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -150,6 +155,7 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
                 logger.info("early stopping: no val improvement for %d epochs", patience)
                 break
 
+    tb_writer.close()
     (ckpt_dir / "summary.json").write_text(
         json.dumps(
             {
