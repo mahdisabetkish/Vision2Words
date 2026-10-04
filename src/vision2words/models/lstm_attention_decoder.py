@@ -75,19 +75,37 @@ class LSTMAttentionDecoder(CaptionDecoder):
         c = torch.tanh(self.init_c(mean_feature))
         return h, c
 
+    def step(
+        self, token: torch.Tensor, h: torch.Tensor, c: torch.Tensor, features: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """One decoding step with explicit, caller-carried state: token (B,),
+        h/c (B, hidden_size), features (B, 49, feature_size) -> (logits, new_h,
+        new_c, attn_weights).
+
+        forward() below has a Python-level loop over timesteps, because
+        attention has to be recomputed fresh at every step from the *current*
+        hidden state. ONNX export traces a Python loop to a fixed number of
+        iterations instead of a real loop, so that loop can't live inside the
+        exported graph -- this method is the loop body, exported on its own,
+        with the C++ port providing the loop (see cpp/).
+        """
+        embedded = self.embedding(token)
+        context, attn_weights = self.attention(features, h)
+        context = self.dropout(self.context_proj(context))
+        lstm_input = torch.cat([embedded, context], dim=1)
+        h, c = self.lstm_cell(lstm_input, (h, c))
+        logits = self.classifier(self.dropout(h))
+        return logits, h, c, attn_weights
+
     def forward(self, features: torch.Tensor, input_tokens: torch.Tensor) -> torch.Tensor:
         batch_size, seq_len = input_tokens.shape
         h, c = self.init_state(features)
-        embedded = self.dropout(self.embedding(input_tokens))
 
         logits_steps = []
         attn_steps = []
         for t in range(seq_len):
-            context, attn_weights = self.attention(features, h)
-            context = self.dropout(self.context_proj(context))
-            lstm_input = torch.cat([embedded[:, t, :], context], dim=1)
-            h, c = self.lstm_cell(lstm_input, (h, c))
-            logits_steps.append(self.classifier(self.dropout(h)))
+            logits, h, c, attn_weights = self.step(input_tokens[:, t], h, c, features)
+            logits_steps.append(logits)
             attn_steps.append(attn_weights)
 
         self.last_attention_weights = torch.stack(attn_steps, dim=1)  # (B, L, 49)
@@ -105,22 +123,17 @@ class LSTMAttentionDecoder(CaptionDecoder):
         if features.size(0) != 1:
             raise ValueError("generate_with_attention decodes one image at a time")
         h, c = self.init_state(features)
-        current = torch.tensor([[start_id]], device=features.device)
+        current = torch.tensor([start_id], device=features.device)
         tokens = [start_id]
         attn_maps = []
 
         for _ in range(max_len):
-            embedded = self.embedding(current).squeeze(1)
-            context, attn_weights = self.attention(features, h)
-            context = self.context_proj(context)
-            lstm_input = torch.cat([embedded, context], dim=1)
-            h, c = self.lstm_cell(lstm_input, (h, c))
-            logits = self.classifier(h)
+            logits, h, c, attn_weights = self.step(current, h, c, features)
             next_token = int(logits.argmax(dim=-1).item())
             tokens.append(next_token)
             attn_maps.append(attn_weights.squeeze(0))
             if next_token == end_id:
                 break
-            current = torch.tensor([[next_token]], device=features.device)
+            current = torch.tensor([next_token], device=features.device)
 
         return tokens, torch.stack(attn_maps, dim=0)
