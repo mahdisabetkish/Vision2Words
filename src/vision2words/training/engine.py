@@ -29,9 +29,17 @@ def run_epoch(
     criterion: nn.Module,
     device: torch.device,
     optimizer: torch.optim.Optimizer | None = None,
+    grad_clip_norm: float | None = None,
 ) -> float:
     """Runs one full pass over ``loader``. Trains if ``optimizer`` is given,
     otherwise evaluates in no-grad mode. Returns the mean per-token loss.
+
+    ``grad_clip_norm``, applied only while training, caps the norm of the
+    full gradient before the optimizer step. The LSTM decoders can produce
+    the occasional large gradient early in training (a long, confidently
+    wrong sequence compounds its loss across every step), and without
+    clipping that turns into one bad Adam step that the next several
+    epochs have to recover from.
     """
     is_training = optimizer is not None
     model.train(is_training)
@@ -52,6 +60,8 @@ def run_epoch(
             if is_training:
                 optimizer.zero_grad()
                 loss.backward()
+                if grad_clip_norm is not None:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_norm)
                 optimizer.step()
 
             num_tokens = (targets != criterion.ignore_index).sum().item()

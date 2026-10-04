@@ -1,10 +1,10 @@
-"""Train the LSTM caption decoder on cached EfficientNet-B0 features.
+"""Train any of the three caption decoders on cached EfficientNet-B0 features.
 
-Everything a run needs -- data paths, model size, optimizer, how long to
-train -- comes from a YAML config (see configs/) plus optional ``--set``
-overrides, so a run is reproducible from the checkpoint directory alone: the
-resolved config and the vocabulary are written there together with the
-weights.
+Everything a run needs -- data paths, which decoder, its size, the
+optimizer, how long to train -- comes from a YAML config (see configs/)
+plus optional ``--set`` overrides, so a run is reproducible from the
+checkpoint directory alone: the resolved config and the vocabulary are
+written there together with the weights.
 """
 
 from __future__ import annotations
@@ -19,9 +19,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from vision2words.data.dataset import CaptionFeatureDataset, collate_captions
-from vision2words.data.flickr8k import ensure_data, load_captions
+from vision2words.data.flickr8k import ensure_data, load_captions, load_split
 from vision2words.data.vocabulary import Vocabulary
-from vision2words.models.lstm_decoder import LSTMDecoder
+from vision2words.models import build_decoder, feature_mode_for
 from vision2words.training.engine import run_epoch
 from vision2words.utils.config import load_config, save_yaml
 from vision2words.utils.seed import set_seed
@@ -44,10 +44,10 @@ def _build_vocab(raw_dir: Path, feature_dir: Path, min_freq: int) -> Vocabulary:
         return Vocabulary.load(vocab_path)
 
     captions = load_captions(raw_dir)
-    from vision2words.data.flickr8k import load_split
-
     train_ids = set(load_split(raw_dir)["train"])
-    train_captions = [cap for image_id, caps in captions.items() if image_id in train_ids for cap in caps]
+    train_captions = [
+        cap for image_id, caps in captions.items() if image_id in train_ids for cap in caps
+    ]
     vocab = Vocabulary.build(train_captions, min_freq=min_freq)
     vocab.save(vocab_path)
     logger.info("built vocabulary: %d words (min_freq=%d) -> %s", len(vocab), min_freq, vocab_path)
@@ -64,10 +64,11 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
     captions = load_captions(raw_dir)
 
     device = _resolve_device(config["train"]["device"])
+    feature_mode = feature_mode_for(config["model"]["type"])
 
     collate = functools.partial(collate_captions, pad_id=vocab.pad_id)
-    train_ds = CaptionFeatureDataset(feature_dir, "train", captions, vocab, feature_mode="pooled")
-    val_ds = CaptionFeatureDataset(feature_dir, "val", captions, vocab, feature_mode="pooled")
+    train_ds = CaptionFeatureDataset(feature_dir, "train", captions, vocab, feature_mode=feature_mode)
+    val_ds = CaptionFeatureDataset(feature_dir, "val", captions, vocab, feature_mode=feature_mode)
     train_loader = DataLoader(
         train_ds,
         batch_size=config["train"]["batch_size"],
@@ -83,46 +84,52 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
         num_workers=config["train"].get("num_workers", 0),
     )
 
-    model = LSTMDecoder(
-        vocab_size=len(vocab),
-        pad_id=vocab.pad_id,
-        feature_size=config["model"]["feature_size"],
-        embed_size=config["model"]["embed_size"],
-        hidden_size=config["model"]["hidden_size"],
-        num_layers=config["model"].get("num_layers", 1),
-        dropout=config["model"].get("dropout", 0.3),
-    ).to(device)
+    model = build_decoder(config["model"], vocab_size=len(vocab), pad_id=vocab.pad_id).to(device)
+    num_params = sum(p.numel() for p in model.parameters())
+    logger.info("model=%s params=%d feature_mode=%s", config["model"]["type"], num_params, feature_mode)
 
     criterion = torch.nn.CrossEntropyLoss(ignore_index=vocab.pad_id)
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["train"]["lr"])
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=config["train"]["lr"],
+        weight_decay=config["train"].get("weight_decay", 0.0),
+    )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.5, patience=config["train"].get("lr_patience", 2)
+    )
+    grad_clip_norm = config["train"].get("grad_clip_norm")
 
     ckpt_dir = Path(config["train"]["ckpt_dir"])
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     save_yaml(config, ckpt_dir / "config.yaml")
 
     log_path = ckpt_dir / "training_log.csv"
-    log_path.write_text("epoch,train_loss,val_loss,epoch_seconds\n", encoding="utf-8")
+    log_path.write_text("epoch,train_loss,val_loss,lr,epoch_seconds\n", encoding="utf-8")
 
     best_val_loss = float("inf")
     epochs_without_improvement = 0
     patience = config["train"].get("early_stopping_patience", 5)
+    epoch = 0
 
     for epoch in range(1, config["train"]["epochs"] + 1):
         start = time.time()
-        train_loss = run_epoch(model, train_loader, criterion, device, optimizer)
+        train_loss = run_epoch(model, train_loader, criterion, device, optimizer, grad_clip_norm)
         val_loss = run_epoch(model, val_loader, criterion, device, optimizer=None)
+        scheduler.step(val_loss)
         elapsed = time.time() - start
+        current_lr = optimizer.param_groups[0]["lr"]
 
         logger.info(
-            "epoch %d/%d train_loss=%.4f val_loss=%.4f (%.1fs)",
+            "epoch %d/%d train_loss=%.4f val_loss=%.4f lr=%.2e (%.1fs)",
             epoch,
             config["train"]["epochs"],
             train_loss,
             val_loss,
+            current_lr,
             elapsed,
         )
         with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"{epoch},{train_loss:.6f},{val_loss:.6f},{elapsed:.1f}\n")
+            f.write(f"{epoch},{train_loss:.6f},{val_loss:.6f},{current_lr:.2e},{elapsed:.1f}\n")
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -133,6 +140,7 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
                     "model_config": config["model"],
                     "epoch": epoch,
                     "val_loss": val_loss,
+                    "num_params": num_params,
                 },
                 ckpt_dir / "best.pt",
             )
@@ -143,7 +151,15 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
                 break
 
     (ckpt_dir / "summary.json").write_text(
-        json.dumps({"best_val_loss": best_val_loss, "epochs_ran": epoch}, indent=2),
+        json.dumps(
+            {
+                "model_type": config["model"]["type"],
+                "best_val_loss": best_val_loss,
+                "epochs_ran": epoch,
+                "num_params": num_params,
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
     return ckpt_dir / "best.pt"

@@ -1,17 +1,16 @@
-# Phase 1 baseline: plain LSTM decoder over pooled EfficientNet-B0 features,
-# no attention. Intentionally the weakest of the three -- it's the point of
-# comparison the other two decoders are measured against.
+# Phase 2 decoder A: LSTM with Bahdanau attention over the 7x7 spatial
+# feature grid (Show, Attend and Tell).
 data:
   raw_dir: data/raw
   feature_dir: data/features
   min_word_freq: 5
 
 model:
-  type: lstm
+  type: lstm_attention
   feature_size: 1280
   embed_size: 256
   hidden_size: 512
-  num_layers: 1
+  attn_size: 256
   dropout: 0.3
 
 train:
@@ -24,5 +23,5 @@ train:
   grad_clip_norm: 5.0
   lr_patience: 2
   epochs: 40
-  early_stopping_patience: 5
-  ckpt_dir: checkpoints/lstm_baseline
+  early_stopping_patience: 6
+  ckpt_dir: checkpoints/lstm_attention

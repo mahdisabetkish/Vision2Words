@@ -80,11 +80,48 @@ def _add_caption(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--checkpoint", required=True)
     p.add_argument("--vocab", required=True)
     p.add_argument("--device", default="cpu")
+    p.add_argument("--beam-size", type=int, default=1, help="1 = greedy")
 
     def run(args: argparse.Namespace) -> None:
         from vision2words.inference.caption import caption_image
 
-        print(caption_image(args.image, args.checkpoint, args.vocab, args.device))
+        caption = caption_image(
+            args.image, args.checkpoint, args.vocab, args.device, beam_size=args.beam_size
+        )
+        print(caption)
+
+    p.set_defaults(run=run)
+
+
+def _add_evaluate(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("evaluate", help="BLEU/CIDEr + latency on a split")
+    p.add_argument("--checkpoint", required=True)
+    p.add_argument("--raw-dir", required=True)
+    p.add_argument("--feature-dir", required=True)
+    p.add_argument("--split", default="test")
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--beam-size", type=int, default=3)
+    p.add_argument("--out", help="write the result as JSON to this path")
+
+    def run(args: argparse.Namespace) -> None:
+        import json
+
+        from vision2words.evaluation.evaluate import evaluate_checkpoint
+
+        result = evaluate_checkpoint(
+            args.checkpoint,
+            args.raw_dir,
+            args.feature_dir,
+            args.split,
+            args.device,
+            args.beam_size,
+        )
+        text = json.dumps(result, indent=2, ensure_ascii=False)
+        print(text)
+        if args.out:
+            from pathlib import Path
+
+            Path(args.out).write_text(text, encoding="utf-8")
 
     p.set_defaults(run=run)
 
@@ -98,6 +135,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_train(subparsers)
     _add_sample_captions(subparsers)
     _add_caption(subparsers)
+    _add_evaluate(subparsers)
 
     return parser
 
