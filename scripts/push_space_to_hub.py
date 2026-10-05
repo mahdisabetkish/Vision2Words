@@ -14,6 +14,7 @@ doesn't have access to this repo's src/ layout at runtime).
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -38,10 +39,15 @@ def push_space(repo_id: str, model_repo_id: str, private: bool = False) -> None:
         shutil.copytree(REPO_ROOT / "src" / "vision2words", tmp / "vision2words")
 
         app_py = (tmp / "app.py").read_text(encoding="utf-8")
-        app_py = app_py.replace(
-            'MODEL_REPO = os.environ.get("V2W_MODEL_REPO", "vision2words/vision2words-decoders")',
+        app_py, n_subs = re.subn(
+            r'MODEL_REPO = os\.environ\.get\("V2W_MODEL_REPO", "[^"]+"\)',
             f'MODEL_REPO = os.environ.get("V2W_MODEL_REPO", "{model_repo_id}")',
+            app_py,
         )
+        # Fail loudly if app.py's MODEL_REPO line changes shape, rather than
+        # publishing a Space that still points at the default repo.
+        if n_subs != 1:
+            raise RuntimeError("could not find the MODEL_REPO line in app/app.py")
         (tmp / "app.py").write_text(app_py, encoding="utf-8")
 
         api.upload_folder(folder_path=str(tmp), repo_id=repo_id, repo_type="space")

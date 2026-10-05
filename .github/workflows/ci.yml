@@ -56,4 +56,9 @@ jobs:
         run: cmake --build cpp/build -- -j"$(nproc)"
 
       - name: Binary exists and runs (prints usage, no model files here)
-        run: ./cpp/build/v2w_caption || true
+        # The binary exits non-zero when given no arguments, so capture the
+        # output and check for the usage line instead of relying on the exit code.
+        run: |
+          out=$(./cpp/build/v2w_caption 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q "^usage: v2w_caption"
