@@ -30,7 +30,12 @@ def extract_features(
     device: str = "cpu",
     batch_size: int = 32,
     num_workers: int = 4,
+    max_images: int | None = None,
 ) -> None:
+    """max_images caps how many images per split get processed -- for the
+    Nextflow `test` profile, which needs this to finish in minutes rather
+    than running the real ~8000-image dataset. Leave it unset for a real run.
+    """
     raw_dir = ensure_data(raw_dir)
     feature_dir = Path(feature_dir)
     feature_dir.mkdir(parents=True, exist_ok=True)
@@ -43,6 +48,8 @@ def extract_features(
 
     for split_name, image_ids in splits.items():
         image_ids = [i for i in image_ids if i in captions]
+        if max_images is not None:
+            image_ids = image_ids[:max_images]
         dataset = ImageOnlyDataset(raw_dir / "images", image_ids, transform)
         loader = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers

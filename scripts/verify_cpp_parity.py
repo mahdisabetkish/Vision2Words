@@ -45,6 +45,7 @@ def run_cpp(binary: Path, image_path: Path, model_dir: Path, decoder: str, beam_
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", default="data/raw")
+    parser.add_argument("--feature-dir", default="data/features", help="where test_ids.json and vocab.json live")
     parser.add_argument("--model-dir", default="export")
     parser.add_argument("--cpp-build-dir", default="cpp/build")
     parser.add_argument("--lstm-attention-checkpoint", default="checkpoints/lstm_attention/best.pt")
@@ -60,7 +61,7 @@ def main() -> None:
 
     # Resolve test image ids from the feature cache next to the checkpoints,
     # not from --model-dir (the ONNX export dir doesn't carry the split list).
-    feature_dir = Path("data/features")
+    feature_dir = Path(args.feature_dir)
     test_ids = json.loads((feature_dir / "test_ids.json").read_text(encoding="utf-8"))[: args.num_images]
 
     checkpoints = {

@@ -11,6 +11,19 @@ import argparse
 import logging
 
 
+def _add_download_data(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser("download-data", help="fetch Flickr8k if raw-dir isn't already populated")
+    p.add_argument("--raw-dir", required=True)
+
+    def run(args: argparse.Namespace) -> None:
+        from vision2words.data.flickr8k import ensure_data
+
+        path = ensure_data(args.raw_dir)
+        print(path)
+
+    p.set_defaults(run=run)
+
+
 def _add_extract_features(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser("extract-features", help="cache encoder features for all splits")
     p.add_argument("--raw-dir", required=True, help="Flickr8k root (downloaded here if missing)")
@@ -18,11 +31,14 @@ def _add_extract_features(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--device", default="cpu")
     p.add_argument("--batch-size", type=int, default=32)
     p.add_argument("--num-workers", type=int, default=4)
+    p.add_argument("--max-images", type=int, default=None, help="cap images per split (for quick test runs)")
 
     def run(args: argparse.Namespace) -> None:
         from vision2words.data.features import extract_features
 
-        extract_features(args.raw_dir, args.feature_dir, args.device, args.batch_size, args.num_workers)
+        extract_features(
+            args.raw_dir, args.feature_dir, args.device, args.batch_size, args.num_workers, args.max_images
+        )
 
     p.set_defaults(run=run)
 
@@ -182,6 +198,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--verbose", action="store_true", help="enable debug logging")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    _add_download_data(subparsers)
     _add_extract_features(subparsers)
     _add_train(subparsers)
     _add_sample_captions(subparsers)
