@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/mahdisabetkish/Vision2Words/actions/workflows/ci.yml/badge.svg)](https://github.com/mahdisabetkish/Vision2Words/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Space-vision2words-yellow)](https://huggingface.co/spaces/vision2words/vision2words)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-vision2words--app-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/mahdisabetkish/vision2words-app)
 
 Image captioning on Flickr8k, comparing an LSTM decoder with Bahdanau attention against a Transformer decoder, both reading the same frozen EfficientNet-B0 features, with a C++/ONNX Runtime inference path and a from-scratch training pipeline behind them.
 
@@ -93,16 +93,16 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
 
 v2w export-onnx --feature-dir ../data/features \
     --lstm-attention-checkpoint ../checkpoints/lstm_attention/best.pt \
-    --transformer-checkpoint ../checkpoints/transformer/best.pt --out-dir ../export
+    --transformer-checkpoint ../checkpoints/transformer/best.pt --out-dir ../export/onnx
 
-./build/v2w_caption path/to/image.jpg --model-dir ../export --decoder lstm_attention --beam-size 3
+./build/v2w_caption path/to/image.jpg --model-dir ../export/onnx --decoder lstm_attention --beam-size 3
 ```
 
 See `cpp/README.md` for the export strategy (the attention decoder exports differently from the Transformer, for reasons that come up specifically with ONNX) and the full build walkthrough.
 
 ## C++ inference: does it actually match Python, and is it faster?
 
-Measured on the training machine (Windows, GTX 1080 Ti, MSVC, ONNX Runtime 1.20.1 CPU execution provider). Full writeup in `results/cpp_report.md`.
+Measured on the training machine (Windows, GTX 1080 Ti, MSVC, ONNX Runtime 1.20.1 CPU execution provider). Full writeup in `results/cpp_report.md`. The parity check re-run on Ubuntu 24.04 with the same checkpoints gives the same 12 of 16 matches.
 
 - **Parity**: 12 of 16 test captions matched Python exactly (beam search, two decoders, 8 images). The 4 mismatches are close paraphrases, not garbage, and trace to `stb_image_resize2`'s resize filter not being bit-identical to PIL's -- the exported ONNX graphs themselves were separately verified against PyTorch to ~1e-6 precision.
 - **Latency** (single image, model loaded once, mean of 50 runs):

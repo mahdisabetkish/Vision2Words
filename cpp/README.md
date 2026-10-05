@@ -35,7 +35,7 @@ powershell -File scripts/fetch_third_party.ps1
 v2w export-onnx --feature-dir data/features \
     --lstm-attention-checkpoint checkpoints/lstm_attention/best.pt \
     --transformer-checkpoint checkpoints/transformer/best.pt \
-    --out-dir export
+    --out-dir export/onnx
 
 # 3. Configure and build.
 cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
@@ -47,12 +47,12 @@ cmake --build cpp/build --config Release
 ```bash
 # Windows: cpp/build/Release/v2w_caption.exe
 # Linux:   cpp/build/v2w_caption
-v2w_caption path/to/image.jpg --model-dir export --decoder lstm_attention --beam-size 3
-v2w_caption path/to/image.jpg --model-dir export --decoder transformer
+v2w_caption path/to/image.jpg --model-dir export/onnx --decoder lstm_attention --beam-size 3
+v2w_caption path/to/image.jpg --model-dir export/onnx --decoder transformer
 
 # Latency benchmark (end-to-end: preprocess + encoder + decode), averaged
 # over N runs on the same image:
-v2w_caption path/to/image.jpg --model-dir export --decoder lstm_attention --benchmark 50
+v2w_caption path/to/image.jpg --model-dir export/onnx --decoder lstm_attention --benchmark 50
 ```
 
 ## Parity and benchmark results

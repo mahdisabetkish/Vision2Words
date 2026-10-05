@@ -59,7 +59,7 @@ def main() -> None:
     parser.add_argument(
         "--feature-dir", default="data/features", help="where test_ids.json and vocab.json live"
     )
-    parser.add_argument("--model-dir", default="export")
+    parser.add_argument("--model-dir", default="export/onnx")
     parser.add_argument("--cpp-build-dir", default="cpp/build")
     parser.add_argument("--lstm-attention-checkpoint", default="checkpoints/lstm_attention/best.pt")
     parser.add_argument("--transformer-checkpoint", default="checkpoints/transformer/best.pt")

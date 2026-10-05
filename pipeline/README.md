@@ -34,7 +34,7 @@ nextflow run pipeline/main.nf -profile docker
 nextflow run pipeline/main.nf -profile gpu
 ```
 
-Outputs land under `data/`, `checkpoints/`, `export/`, and `results/` at
+Outputs land under `data/`, `checkpoints/`, `export/onnx/`, and `results/` at
 the repo root (wherever you launched `nextflow run` from), matching where
 the manual CLI workflow puts them -- so inspecting the pipeline's output is
 the same as inspecting a manual run's.
@@ -51,16 +51,13 @@ instead of typed by hand.
 
 ## Status
 
-Written and reviewed carefully, but **not execution-tested** on the
-project's own dev machine, for a platform reason rather than a pipeline
-one: Nextflow requires a POSIX environment and explicitly only supports
-Windows through WSL (its own `Session.registerSignalHandlers` tries to
-register a `SIGHUP` handler that plain Windows' JVM doesn't have, and
-fails immediately with `Unknown signal: HUP` before running a single
-process -- confirmed on this machine, not a guess). This dev machine is a
-remote box that can't be rebooted, which rules out installing WSL here.
+Verified on Ubuntu 24.04 (CPU, 4 cores, no GPU):
 
-So: real execution testing of `main.nf`, all four profiles included, is
-still owed on a real Linux host (the `local` profile needs `pip install
--e .` and a C++ toolchain there; `docker`/`gpu` need a working Docker
-host). Review the DSL2 carefully before trusting it blind.
+- `nextflow run pipeline/main.nf -profile local,test` runs all ten steps to
+  completion. This profile trains each model for one epoch on 24 images, so
+  its captions are empty and its parity and benchmark numbers only prove the
+  wiring. Use the real checkpoints for a meaningful parity check.
+- `-profile docker,test` and `-profile gpu,test` are not run yet. The
+  `vision2words-train` image builds in CI, but it hasn't been run through this
+  pipeline, and the GPU profile needs an NVIDIA GPU, which the test machine
+  does not have.
