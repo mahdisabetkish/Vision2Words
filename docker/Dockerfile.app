@@ -23,7 +23,10 @@ RUN pip install --no-cache-dir torch torchvision \
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ src/
 COPY app/ app/
-RUN pip install --no-cache-dir ".[app]" \
+# Copied files keep the build machine's permissions. Make sure the non-root
+# user can read the app and the package, whatever the local file modes are.
+RUN chmod -R a+rX /app \
+    && pip install --no-cache-dir ".[app]" \
     && rm -rf /root/.cache
 
 # Gradio listens on localhost by default, which isn't reachable from outside
