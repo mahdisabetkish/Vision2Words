@@ -1,5 +1,7 @@
 #include "caption_model.hpp"
 
+#include "preprocess.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -248,11 +250,13 @@ DecodeResult CaptionModel::decode_transformer_beam(const std::vector<float>& fea
     auto t0 = std::chrono::steady_clock::now();
 
     struct Beam {
-        std::vector<int64_t> tokens{start_id};
+        std::vector<int64_t> tokens;
         float score = 0.0f;
         bool finished = false;
     };
-    std::vector<Beam> beams(1);
+    Beam initial;
+    initial.tokens.push_back(start_id);
+    std::vector<Beam> beams{initial};
     std::vector<Beam> finished_beams;
 
     for (int step = 0; step < kFixedDecodeLen - 1 && !beams.empty(); ++step) {

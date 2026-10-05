@@ -30,8 +30,8 @@ add_executable(v2w_caption
 )
 target_include_directories(v2w_caption PRIVATE
     src
+    third_party
     third_party/stb
-    third_party/nlohmann
     "${ONNXRUNTIME_ROOT}/include"
 )
 if(WIN32)
