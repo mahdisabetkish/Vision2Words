@@ -88,6 +88,7 @@ def test_lstm_attention_init_and_step_match_pytorch(tmp_path):
         str(init_path),
         input_names=["features"],
         output_names=["h0", "c0"],
+        dynamo=False,
     )
     torch.onnx.export(
         StepWrapper(model),
@@ -95,6 +96,7 @@ def test_lstm_attention_init_and_step_match_pytorch(tmp_path):
         str(step_path),
         input_names=["token", "h", "c", "features"],
         output_names=["logits", "h_next", "c_next", "attn_weights"],
+        dynamo=False,
     )
 
     with torch.no_grad():
@@ -141,6 +143,7 @@ def test_transformer_fixed_buffer_matches_pytorch(tmp_path):
         str(onnx_path),
         input_names=["features", "tokens"],
         output_names=["logits"],
+        dynamo=False,
     )
 
     real_tokens = torch.randint(1, VOCAB_SIZE, (1, fixed_len))

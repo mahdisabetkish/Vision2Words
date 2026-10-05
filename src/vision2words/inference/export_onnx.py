@@ -41,6 +41,7 @@ def export_encoder(out_dir: Path, device: str = "cpu") -> None:
         output_names=["pooled", "spatial"],
         dynamic_axes={"image": {0: "batch"}, "pooled": {0: "batch"}, "spatial": {0: "batch"}},
         opset_version=OPSET,
+        dynamo=False,
     )
 
 
@@ -88,6 +89,7 @@ def export_lstm_attention(
         output_names=["h0", "c0"],
         dynamic_axes={"features": {0: "batch"}, "h0": {0: "batch"}, "c0": {0: "batch"}},
         opset_version=OPSET,
+        dynamo=False,
     )
     torch.onnx.export(
         _StepWrapper(model),
@@ -106,6 +108,7 @@ def export_lstm_attention(
             "attn_weights": {0: "batch"},
         },
         opset_version=OPSET,
+        dynamo=False,
     )
 
 
@@ -147,6 +150,7 @@ def export_transformer(
         input_names=["features", "tokens"],
         output_names=["logits"],
         opset_version=OPSET,
+        dynamo=False,
     )
 
 
