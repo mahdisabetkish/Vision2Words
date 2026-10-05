@@ -1,0 +1,174 @@
+/* Vision2Words Space theme: a darkroom / contact-sheet identity.
+   Two decoders, two identity colors -- amber for the attention-LSTM
+   (it literally produces warm heatmaps), teal for the Transformer
+   (cooler, more structured). Fraunces for display type, IBM Plex Sans
+   for body/UI, IBM Plex Mono for generated captions and stats -- set as
+   the Gradio theme's fonts, this file only carries layout + color. */
+
+:root {
+    --v2w-paper: #efeee7;
+    --v2w-paper-raised: #ffffff;
+    --v2w-ink: #211f1c;
+    --v2w-ink-soft: #6b665a;
+    --v2w-line: #dedbd1;
+    --v2w-amber: #b8752a;
+    --v2w-amber-soft: #f3e4cc;
+    --v2w-amber-ink: #6b4717;
+    --v2w-teal: #2f6b7a;
+    --v2w-teal-soft: #dceaec;
+    --v2w-teal-ink: #163c45;
+}
+
+.dark {
+    --v2w-paper: #1a1816;
+    --v2w-paper-raised: #242220;
+    --v2w-ink: #ede9e0;
+    --v2w-ink-soft: #a69f8f;
+    --v2w-line: #38352f;
+    --v2w-amber: #d99a4e;
+    --v2w-amber-soft: #3a2c17;
+    --v2w-amber-ink: #f0cfa0;
+    --v2w-teal: #6fb4c4;
+    --v2w-teal-soft: #16323a;
+    --v2w-teal-ink: #bfe4ea;
+}
+
+.gradio-container {
+    background: var(--v2w-paper) !important;
+    color: var(--v2w-ink) !important;
+    max-width: 1080px !important;
+}
+
+/* ---- Masthead ------------------------------------------------------- */
+
+#v2w-masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-block: 8px 4px;
+    border-bottom: 1px solid var(--v2w-line);
+    margin-bottom: 18px;
+}
+
+#v2w-masthead h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 2.1rem;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--v2w-ink);
+    text-wrap: balance;
+}
+
+#v2w-masthead .v2w-kicker {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--v2w-ink-soft);
+}
+
+#v2w-masthead .v2w-sub {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--v2w-ink-soft);
+    max-width: 62ch;
+}
+
+/* ---- Light-table upload area ----------------------------------------- */
+
+#v2w-upload {
+    border: 1px solid var(--v2w-line) !important;
+    border-radius: 6px !important;
+    background: var(--v2w-paper-raised) !important;
+    box-shadow: inset 0 0 0 6px var(--v2w-paper);
+}
+
+/* ---- Specimen cards (one per decoder) --------------------------------- */
+
+.v2w-specimen {
+    background: var(--v2w-paper-raised);
+    border: 1px solid var(--v2w-line);
+    border-radius: 4px;
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.v2w-specimen.v2w-amber { border-left: 4px solid var(--v2w-amber); }
+.v2w-specimen.v2w-teal { border-left: 4px solid var(--v2w-teal); }
+
+.v2w-specimen-label {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.v2w-amber .v2w-specimen-label { color: var(--v2w-amber-ink); }
+.v2w-teal .v2w-specimen-label { color: var(--v2w-teal-ink); }
+
+.v2w-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.v2w-amber .v2w-dot { background: var(--v2w-amber); }
+.v2w-teal .v2w-dot { background: var(--v2w-teal); }
+
+.v2w-caption-text {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: var(--v2w-ink);
+    min-height: 2.6em;
+}
+
+.v2w-caption-text::before { content: '\201C'; color: var(--v2w-ink-soft); }
+.v2w-caption-text::after { content: '\201D'; color: var(--v2w-ink-soft); }
+
+.v2w-specimen-meta {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--v2w-ink-soft);
+    border-top: 1px dashed var(--v2w-line);
+    padding-top: 6px;
+}
+
+/* ---- Section labels ---------------------------------------------------- */
+
+.v2w-section-label {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--v2w-ink-soft);
+    margin: 4px 0 6px;
+}
+
+/* ---- Attention filmstrip ------------------------------------------------ */
+
+#v2w-filmstrip {
+    background: var(--v2w-ink);
+    border-radius: 4px;
+    padding: 10px 10px 4px;
+}
+
+#v2w-filmstrip::before,
+#v2w-filmstrip::after {
+    content: '';
+    display: block;
+    height: 6px;
+    background-image: repeating-linear-gradient(90deg, var(--v2w-paper) 0 6px, transparent 6px 14px);
+    opacity: 0.35;
+    margin-bottom: 6px;
+}
+
+footer { display: none !important; }
