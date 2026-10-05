@@ -39,6 +39,11 @@ WORKDIR /app
 COPY --from=builder --chown=v2w:v2w /build/cpp/build/v2w_caption ./
 COPY --from=builder --chown=v2w:v2w /build/cpp/build/*.so* ./
 
+# The binary's RUNPATH points at the build machine's ONNX Runtime directory,
+# which doesn't exist in this image. LD_LIBRARY_PATH is searched before
+# RUNPATH by the dynamic loader, so this points it at the copied .so instead.
+ENV LD_LIBRARY_PATH=/app
+
 # vocab.json and the exported ONNX graphs (encoder, decoder A/B, from
 # `v2w export-onnx`) are bind-mounted at `docker run` time from export/,
 # same reasoning as the training image not baking in the dataset -- see

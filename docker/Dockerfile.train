@@ -36,7 +36,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && useradd --create-home --uid 1000 v2w
 
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/*.whl pycocoevalcap \
+# torch/torchvision come from the cu126 index first, so the wheel's own
+# `torch>=2.4` requirement is already satisfied and pip doesn't fall back
+# to the default (newer CUDA) build from PyPI.
+RUN pip install --no-cache-dir torch torchvision \
+        --index-url https://download.pytorch.org/whl/cu126 \
+    && pip install --no-cache-dir /wheels/*.whl pycocoevalcap \
     && rm -rf /wheels
 
 WORKDIR /app

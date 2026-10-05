@@ -1,4 +1,4 @@
-gradio>=5.0
+gradio>=5.0,<6
 torch>=2.4
 torchvision>=0.19
 numpy>=1.26

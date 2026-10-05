@@ -34,7 +34,7 @@ from vision2words.models.encoder import EncoderCNN
 # README's Hugging Face section) -- never hardcode a token here, and this
 # repo id is the only thing that needs to change to point at a different
 # model repo.
-MODEL_REPO = os.environ.get("V2W_MODEL_REPO", "vision2words/vision2words-decoders")
+MODEL_REPO = os.environ.get("V2W_MODEL_REPO", "mahdisabetkish/vision2words-decoders")
 DEVICE = "cpu"
 MAX_LEN = 20
 

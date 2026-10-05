@@ -9,7 +9,11 @@
 // of the actual ML code.
 nextflow.enable.dsl = 2
 
-def epochOverride = params.epochs ? "--set train.epochs=${params.epochs} --set train.early_stopping_patience=${params.epochs} --set data.min_word_freq=1" : ''
+// A function rather than a top-level variable: Nextflow's strict DSL2 syntax
+// doesn't allow statements outside a process, workflow, or function.
+def epochOverride() {
+    params.epochs ? "--set train.epochs=${params.epochs} --set train.early_stopping_patience=${params.epochs} --set data.min_word_freq=1" : ''
+}
 
 process DOWNLOAD_OR_LINK_DATA {
     label 'python_stage'
@@ -45,7 +49,10 @@ process EXTRACT_FEATURES {
 process TRAIN {
     label 'python_stage'
     tag "${model_name}"
-    publishDir "${params.checkpoints_dir}/${model_name}", mode: 'copy', overwrite: true
+    // publishDir is resolved outside the process, so it can't see model_name;
+    // the output directory is named after the model instead, and that name
+    // is what gets published under checkpoints_dir.
+    publishDir params.checkpoints_dir, mode: 'copy', overwrite: true
 
     input:
     tuple val(model_name), path(config_file)
@@ -53,23 +60,25 @@ process TRAIN {
     path raw_data
 
     output:
-    tuple val(model_name), path('checkpoint'), emit: checkpoints
+    tuple val(model_name), path("${model_name}"), emit: checkpoints
 
     script:
     """
     v2w train --config ${config_file} \
         --set data.feature_dir=${features} \
         --set data.raw_dir=${raw_data} \
-        --set train.ckpt_dir=checkpoint \
+        --set train.ckpt_dir=${model_name} \
         --set train.device=${params.device} \
-        ${epochOverride}
+        ${epochOverride()}
     """
 }
 
 process EVALUATE {
     label 'python_stage'
     tag "${model_name}"
-    publishDir params.results_dir, mode: 'copy', overwrite: true, saveAs: { "${model_name}.json" }
+    // Output file is named per model here, because saveAs closures can't see
+    // model_name either.
+    publishDir params.results_dir, mode: 'copy', overwrite: true
 
     input:
     tuple val(model_name), path(checkpoint_dir)
@@ -77,14 +86,14 @@ process EVALUATE {
     path raw_data
 
     output:
-    tuple val(model_name), path('result.json'), emit: result
+    tuple val(model_name), path("${model_name}.json"), emit: result
 
     script:
     """
     v2w evaluate --checkpoint ${checkpoint_dir}/best.pt \
         --raw-dir ${raw_data} --feature-dir ${features} \
         --split test --device ${params.device} --beam-size ${params.beam_size} \
-        --out result.json
+        --out ${model_name}.json
     """
 }
 
@@ -133,14 +142,15 @@ process EXPORT_ONNX {
     tuple val(_b), path(transformer_ckpt)
 
     output:
-    path '*'
+    path 'onnx'
 
     script:
     """
+    mkdir onnx
     v2w export-onnx --feature-dir ${features} \
         --lstm-attention-checkpoint ${lstm_attention_ckpt}/best.pt \
         --transformer-checkpoint ${transformer_ckpt}/best.pt \
-        --out-dir . --device cpu
+        --out-dir onnx --device cpu
     """
 }
 

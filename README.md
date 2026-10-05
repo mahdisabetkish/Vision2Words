@@ -114,9 +114,29 @@ Measured on the training machine (Windows, GTX 1080 Ti, MSVC, ONNX Runtime 1.20.
 
   C++ on CPU beats Python on both CPU and GPU here. That's not a GPU failing -- at batch size 1 with sequences under 20 tokens, kernel-launch and host/device transfer overhead outweighs the actual compute, while ONNX Runtime's CPU path has neither that round trip nor Python's per-step interpreter overhead.
 
-## Hugging Face Space
+## Gradio demo
 
-A Gradio app ([`app/`](app/)) that captions an uploaded image with both decoders side by side and shows the attention decoder's word-by-word attention map. Runs on the free CPU tier; weights load from a Hugging Face model repo via `hf_hub_download`, never committed to this repository. `scripts/push_model_to_hub.py` and `scripts/push_space_to_hub.py` publish it -- neither runs automatically.
+A Gradio app ([`app/`](app/)) captions an uploaded image with both decoders side by side and shows the attention decoder's word-by-word attention map. It runs on CPU. The weights load from the public Hugging Face model repo [`mahdisabetkish/vision2words-decoders`](https://huggingface.co/mahdisabetkish/vision2words-decoders) via `hf_hub_download` on first start, so nothing large is stored in this repository.
+
+Two ways to run it yourself:
+
+**With Docker (no Python setup):**
+
+```bash
+docker build -f docker/Dockerfile.app -t vision2words-app .
+docker run --rm -p 7860:7860 vision2words-app
+```
+
+**From source:**
+
+```bash
+pip install -e ".[app]"
+python app/app.py
+```
+
+Either way, open http://localhost:7860 in a browser. Set `V2W_MODEL_REPO` to load a different model repo.
+
+`scripts/push_model_to_hub.py` and `scripts/push_space_to_hub.py` publish the model and the app to Hugging Face. Neither runs automatically.
 
 ## Training details
 
