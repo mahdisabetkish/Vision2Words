@@ -19,7 +19,9 @@ from vision2words.data.vocabulary import tokenize
 
 
 def _retokenize(texts_by_id: dict[str, list[str]]) -> dict[str, list[str]]:
-    return {image_id: [" ".join(tokenize(t)) for t in texts] for image_id, texts in texts_by_id.items()}
+    return {
+        image_id: [" ".join(tokenize(t)) for t in texts] for image_id, texts in texts_by_id.items()
+    }
 
 
 def compute_bleu_cider(

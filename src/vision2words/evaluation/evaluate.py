@@ -69,7 +69,9 @@ def evaluate_checkpoint(
 
     beam_preds, start = {}, time.perf_counter()
     for image_id in image_ids:
-        generated = beam_search(model, _feature(image_id), vocab.start_id, vocab.end_id, beam_size, max_len)
+        generated = beam_search(
+            model, _feature(image_id), vocab.start_id, vocab.end_id, beam_size, max_len
+        )
         beam_preds[image_id] = vocab.decode(generated[0].tolist())
     beam_latency_ms = 1000 * (time.perf_counter() - start) / len(image_ids)
 
@@ -79,7 +81,10 @@ def evaluate_checkpoint(
         "mean_train_epoch_seconds": _mean_epoch_seconds(ckpt_path.parent),
         "split": split,
         "num_images": len(image_ids),
-        "greedy": {**compute_bleu_cider(greedy_preds, references), "latency_ms_per_image": greedy_latency_ms},
+        "greedy": {
+            **compute_bleu_cider(greedy_preds, references),
+            "latency_ms_per_image": greedy_latency_ms,
+        },
         "beam": {
             **compute_bleu_cider(beam_preds, references),
             "latency_ms_per_image": beam_latency_ms,

@@ -40,7 +40,9 @@ def main() -> None:
             pooled, spatial = encoder(tensor)
             features = pooled if feature_mode == "pooled" else spatial
             if args.beam_size > 1:
-                generated = beam_search(decoder, features, vocab.start_id, vocab.end_id, args.beam_size, 20)
+                generated = beam_search(
+                    decoder, features, vocab.start_id, vocab.end_id, args.beam_size, 20
+                )
             else:
                 generated = greedy_decode(decoder, features, vocab.start_id, vocab.end_id, 20)
         return vocab.decode(generated[0].tolist())
@@ -57,7 +59,9 @@ def main() -> None:
     elapsed = time.perf_counter() - start
 
     mean_ms = 1000 * elapsed / args.runs
-    print(f"mean end-to-end latency over {args.runs} runs ({args.device}), model loaded once: {mean_ms:.2f} ms")
+    print(
+        f"mean latency over {args.runs} runs ({args.device}, model loaded once): {mean_ms:.2f} ms"
+    )
 
 
 if __name__ == "__main__":

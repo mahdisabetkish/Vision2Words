@@ -30,10 +30,21 @@ def find_binary(build_dir: Path) -> Path:
     raise FileNotFoundError(f"no v2w_caption binary found under {build_dir} (build it first)")
 
 
-def run_cpp(binary: Path, image_path: Path, model_dir: Path, decoder: str, beam_size: int) -> tuple[str, float]:
+def run_cpp(
+    binary: Path, image_path: Path, model_dir: Path, decoder: str, beam_size: int
+) -> tuple[str, float]:
     start = time.perf_counter()
     result = subprocess.run(
-        [str(binary), str(image_path), "--model-dir", str(model_dir), "--decoder", decoder, "--beam-size", str(beam_size)],
+        [
+            str(binary),
+            str(image_path),
+            "--model-dir",
+            str(model_dir),
+            "--decoder",
+            decoder,
+            "--beam-size",
+            str(beam_size),
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -45,7 +56,9 @@ def run_cpp(binary: Path, image_path: Path, model_dir: Path, decoder: str, beam_
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", default="data/raw")
-    parser.add_argument("--feature-dir", default="data/features", help="where test_ids.json and vocab.json live")
+    parser.add_argument(
+        "--feature-dir", default="data/features", help="where test_ids.json and vocab.json live"
+    )
     parser.add_argument("--model-dir", default="export")
     parser.add_argument("--cpp-build-dir", default="cpp/build")
     parser.add_argument("--lstm-attention-checkpoint", default="checkpoints/lstm_attention/best.pt")
@@ -62,7 +75,9 @@ def main() -> None:
     # Resolve test image ids from the feature cache next to the checkpoints,
     # not from --model-dir (the ONNX export dir doesn't carry the split list).
     feature_dir = Path(args.feature_dir)
-    test_ids = json.loads((feature_dir / "test_ids.json").read_text(encoding="utf-8"))[: args.num_images]
+    test_ids = json.loads((feature_dir / "test_ids.json").read_text(encoding="utf-8"))[
+        : args.num_images
+    ]
 
     checkpoints = {
         "lstm_attention": args.lstm_attention_checkpoint,
@@ -75,11 +90,15 @@ def main() -> None:
         for image_id in test_ids:
             image_path = raw_dir / "images" / image_id
             py_start = time.perf_counter()
-            py_caption = caption_image(image_path, ckpt, vocab_path, device="cpu", beam_size=args.beam_size)
+            py_caption = caption_image(
+                image_path, ckpt, vocab_path, device="cpu", beam_size=args.beam_size
+            )
             py_seconds = time.perf_counter() - py_start
 
             try:
-                cpp_caption, cpp_seconds = run_cpp(binary, image_path, model_dir, decoder, args.beam_size)
+                cpp_caption, cpp_seconds = run_cpp(
+                    binary, image_path, model_dir, decoder, args.beam_size
+                )
                 error = None
             except subprocess.CalledProcessError as exc:
                 cpp_caption, cpp_seconds, error = None, None, exc.stderr
@@ -100,7 +119,8 @@ def main() -> None:
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
-        json.dumps({"platform": platform.platform(), "rows": rows}, indent=2, ensure_ascii=False), encoding="utf-8"
+        json.dumps({"platform": platform.platform(), "rows": rows}, indent=2, ensure_ascii=False),
+        encoding="utf-8",
     )
 
     num_match = sum(1 for r in rows if r["match"])

@@ -12,7 +12,9 @@ import logging
 
 
 def _add_download_data(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("download-data", help="fetch Flickr8k if raw-dir isn't already populated")
+    p = subparsers.add_parser(
+        "download-data", help="fetch Flickr8k if raw-dir isn't already populated"
+    )
     p.add_argument("--raw-dir", required=True)
 
     def run(args: argparse.Namespace) -> None:
@@ -31,13 +33,20 @@ def _add_extract_features(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--device", default="cpu")
     p.add_argument("--batch-size", type=int, default=32)
     p.add_argument("--num-workers", type=int, default=4)
-    p.add_argument("--max-images", type=int, default=None, help="cap images per split (for quick test runs)")
+    p.add_argument(
+        "--max-images", type=int, default=None, help="cap images per split (for quick test runs)"
+    )
 
     def run(args: argparse.Namespace) -> None:
         from vision2words.data.features import extract_features
 
         extract_features(
-            args.raw_dir, args.feature_dir, args.device, args.batch_size, args.num_workers, args.max_images
+            args.raw_dir,
+            args.feature_dir,
+            args.device,
+            args.batch_size,
+            args.num_workers,
+            args.max_images,
         )
 
     p.set_defaults(run=run)
@@ -171,7 +180,9 @@ def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
 
 
 def _add_export_onnx(subparsers: argparse._SubParsersAction) -> None:
-    p = subparsers.add_parser("export-onnx", help="export encoder + decoders A/B to ONNX for the C++ port")
+    p = subparsers.add_parser(
+        "export-onnx", help="export encoder + decoders A/B to ONNX for the C++ port"
+    )
     p.add_argument("--feature-dir", required=True)
     p.add_argument("--lstm-attention-checkpoint", required=True)
     p.add_argument("--transformer-checkpoint", required=True)

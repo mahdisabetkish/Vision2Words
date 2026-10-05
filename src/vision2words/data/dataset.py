@@ -59,9 +59,7 @@ class CaptionFeatureDataset(Dataset):
         self.features = np.load(feature_dir / f"{split}_{array_name}.npy", mmap_mode="r")
 
         self.pairs: list[tuple[str, str]] = [
-            (image_id, caption)
-            for image_id in ids
-            for caption in captions.get(image_id, [])
+            (image_id, caption) for image_id in ids for caption in captions.get(image_id, [])
         ]
 
     def __len__(self) -> int:
@@ -84,7 +82,7 @@ def _load_ids(feature_dir: Path, split: str) -> list[str]:
 def collate_captions(
     batch: list[tuple[torch.Tensor, torch.Tensor]], pad_id: int
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    features, token_seqs = zip(*batch)
+    features, token_seqs = zip(*batch, strict=True)
     features = torch.stack(features, dim=0)
     max_len = max(seq.size(0) for seq in token_seqs)
     padded = torch.full((len(token_seqs), max_len), pad_id, dtype=torch.long)

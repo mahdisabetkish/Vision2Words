@@ -25,7 +25,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 def push_space(repo_id: str, model_repo_id: str, private: bool = False) -> None:
     api = HfApi()
-    api.create_repo(repo_id=repo_id, repo_type="space", space_sdk="gradio", exist_ok=True, private=private)
+    api.create_repo(
+        repo_id=repo_id, repo_type="space", space_sdk="gradio", exist_ok=True, private=private
+    )
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
@@ -50,7 +52,9 @@ def push_space(repo_id: str, model_repo_id: str, private: bool = False) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-id", required=True, help="e.g. your-username/vision2words")
-    parser.add_argument("--model-repo-id", required=True, help="the model repo pushed by push_model_to_hub.py")
+    parser.add_argument(
+        "--model-repo-id", required=True, help="the model repo pushed by push_model_to_hub.py"
+    )
     parser.add_argument("--private", action="store_true")
     args = parser.parse_args()
 

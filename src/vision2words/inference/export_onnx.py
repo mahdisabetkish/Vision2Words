@@ -68,7 +68,9 @@ class _StepWrapper(torch.nn.Module):
         return self.decoder.step(token, h, c, features)
 
 
-def export_lstm_attention(ckpt_path: Path, vocab: Vocabulary, out_dir: Path, device: str = "cpu") -> None:
+def export_lstm_attention(
+    ckpt_path: Path, vocab: Vocabulary, out_dir: Path, device: str = "cpu"
+) -> None:
     model, model_type = load_checkpoint(ckpt_path, vocab, device)
     assert model_type == "lstm_attention", f"expected lstm_attention checkpoint, got {model_type}"
 
@@ -110,7 +112,9 @@ def export_lstm_attention(ckpt_path: Path, vocab: Vocabulary, out_dir: Path, dev
 FIXED_DECODE_LEN = 20  # matches the max_len used everywhere else in decoding
 
 
-def export_transformer(ckpt_path: Path, vocab: Vocabulary, out_dir: Path, device: str = "cpu") -> None:
+def export_transformer(
+    ckpt_path: Path, vocab: Vocabulary, out_dir: Path, device: str = "cpu"
+) -> None:
     """Export with a fixed sequence length rather than a dynamic one.
 
     The trace-based exporter bakes the dummy input's sequence length into the

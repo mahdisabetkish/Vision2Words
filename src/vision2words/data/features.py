@@ -51,9 +51,7 @@ def extract_features(
         if max_images is not None:
             image_ids = image_ids[:max_images]
         dataset = ImageOnlyDataset(raw_dir / "images", image_ids, transform)
-        loader = DataLoader(
-            dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
-        )
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
         pooled_all = np.zeros((len(image_ids), FEATURE_DIM), dtype=np.float32)
         spatial_all = np.zeros((len(image_ids), SPATIAL_TOKENS, FEATURE_DIM), dtype=np.float32)

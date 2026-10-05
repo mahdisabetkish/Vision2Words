@@ -70,7 +70,9 @@ def main() -> None:
     parser.add_argument("--beam-size", type=int, default=1)
     args = parser.parse_args()
 
-    caption = caption_image(args.image, args.checkpoint, args.vocab, args.device, beam_size=args.beam_size)
+    caption = caption_image(
+        args.image, args.checkpoint, args.vocab, args.device, beam_size=args.beam_size
+    )
     print(caption)
 
 

@@ -63,4 +63,6 @@ def build_decoder(model_config: dict[str, Any], vocab_size: int, pad_id: int) ->
             dropout=model_config.get("dropout", 0.1),
             max_len=model_config.get("max_len", 64),
         )
-    raise ValueError(f"unknown model.type: {model_type!r} (expected lstm, lstm_attention, transformer)")
+    raise ValueError(
+        f"unknown model.type: {model_type!r} (expected lstm, lstm_attention, transformer)"
+    )

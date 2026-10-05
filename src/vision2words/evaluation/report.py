@@ -32,20 +32,37 @@ RESULT_NAMES = ("lstm_baseline", "lstm_attention", "transformer")
 
 
 def build_metrics_json(results_dir: Path) -> dict:
-    combined = {name: json.loads((results_dir / f"{name}.json").read_text(encoding="utf-8")) for name in RESULT_NAMES}
-    (results_dir / "metrics.json").write_text(json.dumps(combined, indent=2, ensure_ascii=False), encoding="utf-8")
+    combined = {
+        name: json.loads((results_dir / f"{name}.json").read_text(encoding="utf-8"))
+        for name in RESULT_NAMES
+    }
+    (results_dir / "metrics.json").write_text(
+        json.dumps(combined, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     return combined
 
 
 def build_comparison_table(combined: dict, results_dir: Path) -> None:
+    columns = [
+        "Model",
+        "Params",
+        "Train s/epoch",
+        "Decode",
+        "BLEU-1",
+        "BLEU-2",
+        "BLEU-3",
+        "BLEU-4",
+        "CIDEr",
+        "ms/img",
+    ]
     lines = [
         "# Decoder comparison",
         "",
         "Flickr8k test split, 1000 images. Beam search uses beam size 3. Latency is",
         "decoder-only (cached features), on the GTX 1080 Ti.",
         "",
-        "| Model | Params | Train s/epoch | Decode | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | CIDEr | ms/img |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| " + " | ".join(columns) + " |",
+        "|" + "---|" * len(columns),
     ]
     for name in RESULT_NAMES:
         data = combined[name]
@@ -82,12 +99,14 @@ def build_sample_figure(
     datasets = {}
     for _name, (_model, model_type) in models.items():
         fm = feature_mode_for(model_type)
-        datasets.setdefault(fm, CaptionFeatureDataset(feature_dir, "test", captions, vocab, feature_mode=fm))
+        datasets.setdefault(
+            fm, CaptionFeatureDataset(feature_dir, "test", captions, vocab, feature_mode=fm)
+        )
 
     fig, axes = plt.subplots(len(image_ids), 1, figsize=(5.5, 4.4 * len(image_ids)))
     axes = np.atleast_1d(axes)
 
-    for ax, image_id in zip(axes, image_ids):
+    for ax, image_id in zip(axes, image_ids, strict=True):
         image = Image.open(raw_dir / "images" / image_id).convert("RGB")
         ax.imshow(image)
         ax.axis("off")
@@ -97,7 +116,9 @@ def build_sample_figure(
             ds = datasets[feature_mode_for(model_type)]
             row = ds.id_to_row[image_id]
             feature = torch.from_numpy(ds.features[row].copy()).unsqueeze(0).to(device)
-            generated = beam_search(model, feature, vocab.start_id, vocab.end_id, beam_size=3, max_len=20)
+            generated = beam_search(
+                model, feature, vocab.start_id, vocab.end_id, beam_size=3, max_len=20
+            )
             lines.append(f"{MODEL_LABELS[model_type]}: {vocab.decode(generated[0].tolist())}")
         lines.append(f"reference: {captions[image_id][0]}")
         ax.set_title("\n".join(lines), fontsize=9, loc="left")
@@ -127,13 +148,17 @@ def build_attention_figure(
     captions = load_captions(raw_dir)
     dataset = CaptionFeatureDataset(feature_dir, "test", captions, vocab, feature_mode="spatial")
 
-    fig, axes = plt.subplots(len(image_ids), max_words, figsize=(2.1 * max_words, 2.3 * len(image_ids)))
+    fig, axes = plt.subplots(
+        len(image_ids), max_words, figsize=(2.1 * max_words, 2.3 * len(image_ids))
+    )
     axes = np.atleast_2d(axes)
 
     for row_idx, image_id in enumerate(image_ids):
         row = dataset.id_to_row[image_id]
         feature = torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
-        tokens, attn_maps = model.generate_with_attention(feature, vocab.start_id, vocab.end_id, max_len=20)
+        tokens, attn_maps = model.generate_with_attention(
+            feature, vocab.start_id, vocab.end_id, max_len=20
+        )
         words = [vocab.idx2word.get(t, "<unk>") for t in tokens[1:]]  # drop the leading <START>
 
         image = Image.open(raw_dir / "images" / image_id).convert("RGB").resize((224, 224))
@@ -146,7 +171,9 @@ def build_attention_figure(
                 continue
             attn = attn_maps[col].reshape(7, 7).cpu().numpy()
             attn = attn / (attn.max() + 1e-8)
-            attn_img = Image.fromarray((attn * 255).astype(np.uint8)).resize((224, 224), Image.BILINEAR)
+            attn_img = Image.fromarray((attn * 255).astype(np.uint8)).resize(
+                (224, 224), Image.BILINEAR
+            )
             ax.imshow(image_arr)
             ax.imshow(np.asarray(attn_img) / 255.0, cmap="jet", alpha=0.45)
             ax.set_title(words[col], fontsize=9)
@@ -174,9 +201,16 @@ def build_report(
     ids = _pick_test_ids(Path(feature_dir), num_sample_images + num_attention_images, seed)
     sample_ids, attention_ids = ids[:num_sample_images], ids[num_sample_images:]
 
-    build_sample_figure(raw_dir, feature_dir, checkpoints, sample_ids, device, results_dir / "sample_captions.png")
+    build_sample_figure(
+        raw_dir, feature_dir, checkpoints, sample_ids, device, results_dir / "sample_captions.png"
+    )
     build_attention_figure(
-        raw_dir, feature_dir, checkpoints["lstm_attention"], attention_ids, device, results_dir / "attention_maps.png"
+        raw_dir,
+        feature_dir,
+        checkpoints["lstm_attention"],
+        attention_ids,
+        device,
+        results_dir / "attention_maps.png",
     )
 
 

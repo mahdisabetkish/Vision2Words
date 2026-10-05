@@ -68,7 +68,9 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
     feature_mode = feature_mode_for(config["model"]["type"])
 
     collate = functools.partial(collate_captions, pad_id=vocab.pad_id)
-    train_ds = CaptionFeatureDataset(feature_dir, "train", captions, vocab, feature_mode=feature_mode)
+    train_ds = CaptionFeatureDataset(
+        feature_dir, "train", captions, vocab, feature_mode=feature_mode
+    )
     val_ds = CaptionFeatureDataset(feature_dir, "val", captions, vocab, feature_mode=feature_mode)
     train_loader = DataLoader(
         train_ds,
@@ -87,7 +89,9 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
 
     model = build_decoder(config["model"], vocab_size=len(vocab), pad_id=vocab.pad_id).to(device)
     num_params = sum(p.numel() for p in model.parameters())
-    logger.info("model=%s params=%d feature_mode=%s", config["model"]["type"], num_params, feature_mode)
+    logger.info(
+        "model=%s params=%d feature_mode=%s", config["model"]["type"], num_params, feature_mode
+    )
 
     criterion = torch.nn.CrossEntropyLoss(ignore_index=vocab.pad_id)
     optimizer = torch.optim.Adam(

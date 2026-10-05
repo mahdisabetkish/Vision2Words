@@ -26,7 +26,9 @@ class BahdanauAttention(nn.Module):
         self.hidden_proj = nn.Linear(hidden_size, attn_size)
         self.energy = nn.Linear(attn_size, 1)
 
-    def forward(self, features: torch.Tensor, hidden: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, features: torch.Tensor, hidden: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """features: (B, 49, feature_size); hidden: (B, hidden_size).
         Returns (context (B, feature_size), weights (B, 49)).
         """

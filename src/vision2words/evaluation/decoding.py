@@ -63,7 +63,9 @@ def beam_search(
     the single best sequence as a (1, L) tensor.
     """
     if features.size(0) != 1:
-        raise ValueError("beam_search decodes one image at a time; call it in a loop over the batch")
+        raise ValueError(
+            "beam_search decodes one image at a time; call it in a loop over the batch"
+        )
     model.eval()
     device = features.device
     vocab_size_hint = None
@@ -88,7 +90,7 @@ def beam_search(
         new_sequences = torch.cat([sequences[beam_indices], token_indices.unsqueeze(1)], dim=1)
         is_end = token_indices == end_id
 
-        for seq, score, ended in zip(new_sequences, top_scores, is_end):
+        for seq, score, ended in zip(new_sequences, top_scores, is_end, strict=True):
             if ended:
                 finished.append((score.item() / seq.size(0), seq))
 

@@ -79,8 +79,12 @@ def _specimen_card(label: str, color_class: str, caption: str, meta: str) -> str
     """
 
 
-def _attention_filmstrip(model, features: torch.Tensor, image: Image.Image, vocab: Vocabulary) -> Image.Image:
-    tokens, attn_maps = model.generate_with_attention(features, vocab.start_id, vocab.end_id, max_len=MAX_LEN)
+def _attention_filmstrip(
+    model, features: torch.Tensor, image: Image.Image, vocab: Vocabulary
+) -> Image.Image:
+    tokens, attn_maps = model.generate_with_attention(
+        features, vocab.start_id, vocab.end_id, max_len=MAX_LEN
+    )
     words = [vocab.idx2word.get(t, "<unk>") for t in tokens[1:]]
     words = [w for w in words if w != "<END>"][:8] or ["<end>"]
     n = len(words)
@@ -103,15 +107,23 @@ def _attention_filmstrip(model, features: torch.Tensor, image: Image.Image, voca
     fig.tight_layout(pad=0.6)
 
     fig.canvas.draw()
-    out = Image.frombuffer("RGBA", fig.canvas.get_width_height(), fig.canvas.buffer_rgba()).convert("RGB")
+    out = Image.frombuffer("RGBA", fig.canvas.get_width_height(), fig.canvas.buffer_rgba()).convert(
+        "RGB"
+    )
     plt.close(fig)
     return out
 
 
 def caption_image(image: Image.Image | None, beam_size: int):
     if image is None:
-        placeholder = _specimen_card("attention-lstm", "v2w-amber", "upload a photograph to begin", "")
-        return placeholder, _specimen_card("transformer", "v2w-teal", "upload a photograph to begin", ""), None
+        placeholder = _specimen_card(
+            "attention-lstm", "v2w-amber", "upload a photograph to begin", ""
+        )
+        return (
+            placeholder,
+            _specimen_card("transformer", "v2w-teal", "upload a photograph to begin", ""),
+            None,
+        )
 
     state = get_state()
     vocab = state["vocab"]
@@ -123,18 +135,31 @@ def caption_image(image: Image.Image | None, beam_size: int):
         start = time.perf_counter()
         attn_features = spatial if feature_mode_for("lstm_attention") == "spatial" else pooled
         if beam_size > 1:
-            attn_tokens = beam_search(state["lstm_attention"], attn_features, vocab.start_id, vocab.end_id, beam_size, MAX_LEN)
+            attn_tokens = beam_search(
+                state["lstm_attention"],
+                attn_features,
+                vocab.start_id,
+                vocab.end_id,
+                beam_size,
+                MAX_LEN,
+            )
         else:
-            attn_tokens = greedy_decode(state["lstm_attention"], attn_features, vocab.start_id, vocab.end_id, MAX_LEN)
+            attn_tokens = greedy_decode(
+                state["lstm_attention"], attn_features, vocab.start_id, vocab.end_id, MAX_LEN
+            )
         attn_ms = (time.perf_counter() - start) * 1000
         attn_caption = vocab.decode(attn_tokens[0].tolist())
 
         start = time.perf_counter()
         tf_features = spatial if feature_mode_for("transformer") == "spatial" else pooled
         if beam_size > 1:
-            tf_tokens = beam_search(state["transformer"], tf_features, vocab.start_id, vocab.end_id, beam_size, MAX_LEN)
+            tf_tokens = beam_search(
+                state["transformer"], tf_features, vocab.start_id, vocab.end_id, beam_size, MAX_LEN
+            )
         else:
-            tf_tokens = greedy_decode(state["transformer"], tf_features, vocab.start_id, vocab.end_id, MAX_LEN)
+            tf_tokens = greedy_decode(
+                state["transformer"], tf_features, vocab.start_id, vocab.end_id, MAX_LEN
+            )
         tf_ms = (time.perf_counter() - start) * 1000
         tf_caption = vocab.decode(tf_tokens[0].tolist())
 
@@ -142,10 +167,16 @@ def caption_image(image: Image.Image | None, beam_size: int):
 
     decode_label = "greedy" if beam_size <= 1 else f"beam k={beam_size}"
     attn_card = _specimen_card(
-        "attention-lstm", "v2w-amber", attn_caption, f"{decode_label} &middot; {attn_ms:.0f} ms &middot; CPU"
+        "attention-lstm",
+        "v2w-amber",
+        attn_caption,
+        f"{decode_label} &middot; {attn_ms:.0f} ms &middot; CPU",
     )
     tf_card = _specimen_card(
-        "transformer", "v2w-teal", tf_caption, f"{decode_label} &middot; {tf_ms:.0f} ms &middot; CPU"
+        "transformer",
+        "v2w-teal",
+        tf_caption,
+        f"{decode_label} &middot; {tf_ms:.0f} ms &middot; CPU",
     )
     return attn_card, tf_card, filmstrip
 
@@ -204,14 +235,20 @@ with gr.Blocks(theme=THEME, css=CSS, title="Vision2Words") as demo:
             with gr.Tabs():
                 with gr.Tab("Captions"):
                     with gr.Row():
-                        attn_card = gr.HTML(_specimen_card("attention-lstm", "v2w-amber", "&hellip;", ""))
+                        attn_card = gr.HTML(
+                            _specimen_card("attention-lstm", "v2w-amber", "&hellip;", "")
+                        )
                         tf_card = gr.HTML(_specimen_card("transformer", "v2w-teal", "&hellip;", ""))
                 with gr.Tab("Attention"):
-                    gr.HTML('<div class="v2w-section-label">where the attention-LSTM looked, word by word</div>')
+                    gr.HTML('<div class="v2w-section-label">where the attention-LSTM looked</div>')
                     filmstrip = gr.Image(label=None, show_label=False, elem_id="v2w-filmstrip")
 
-    run_button.click(fn=caption_image, inputs=[image_input, beam_slider], outputs=[attn_card, tf_card, filmstrip])
-    image_input.change(fn=caption_image, inputs=[image_input, beam_slider], outputs=[attn_card, tf_card, filmstrip])
+    run_button.click(
+        fn=caption_image, inputs=[image_input, beam_slider], outputs=[attn_card, tf_card, filmstrip]
+    )
+    image_input.change(
+        fn=caption_image, inputs=[image_input, beam_slider], outputs=[attn_card, tf_card, filmstrip]
+    )
 
 
 if __name__ == "__main__":

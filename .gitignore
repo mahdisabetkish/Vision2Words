@@ -19,6 +19,7 @@ env/
 /checkpoints/
 *.pt
 *.onnx
+*.npz
 
 # Logs
 *.log
