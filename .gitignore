@@ -38,6 +38,12 @@ work/
 .nextflow/
 .nextflow.log*
 
+# C++ build output and fetched third-party deps (platform-specific prebuilt
+# binaries -- fetched by cpp/scripts/fetch_third_party.* per OS, never committed)
+/cpp/build/
+/cpp/third_party/
+/export/
+
 # Local working notes, not part of the project
 /prompt.txt
 /human.txt
