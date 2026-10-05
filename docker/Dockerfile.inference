@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1.7
+#
+# Inference image: just the compiled C++ binary (see cpp/) and ONNX
+# Runtime's shared library -- no Python, no PyTorch, no CUDA. CPU-only,
+# meant to be as small as the C++ build genuinely needs.
+#
+# Two stages: the builder has cmake/g++/curl and compiles v2w_caption
+# against the Linux ONNX Runtime release; the final stage only carries the
+# binary, the ONNX Runtime .so, and libstdc++ -- none of what built it.
+# Build from the repo root:
+#   docker build -f docker/Dockerfile.inference -t vision2words-infer .
+
+FROM ubuntu:22.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        curl \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY cpp/ cpp/
+RUN bash cpp/scripts/fetch_third_party.sh \
+    && cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build cpp/build -- -j"$(nproc)"
+
+
+FROM ubuntu:22.04 AS final
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libstdc++6 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 1000 v2w
+
+WORKDIR /app
+COPY --from=builder --chown=v2w:v2w /build/cpp/build/v2w_caption ./
+COPY --from=builder --chown=v2w:v2w /build/cpp/build/*.so* ./
+
+# vocab.json and the exported ONNX graphs (encoder, decoder A/B, from
+# `v2w export-onnx`) are bind-mounted at `docker run` time from export/,
+# same reasoning as the training image not baking in the dataset -- see
+# the README's Docker quickstart.
+USER v2w
+ENTRYPOINT ["./v2w_caption"]

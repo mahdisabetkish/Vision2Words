@@ -1,0 +1,50 @@
+# syntax=docker/dockerfile:1.7
+#
+# Training / evaluation image. CUDA 12.6 runtime -- matches the cu126
+# PyTorch wheels this project pins in pyproject.toml, which still support
+# Pascal-generation GPUs (sm_61, e.g. the GTX 1080 family); CUDA 13 wheels
+# dropped that support.
+#
+# Two stages: the builder has the full Python toolchain and produces a
+# wheel; the final stage only has the CUDA runtime and that one wheel
+# installed, so pip's build cache and intermediate files never end up in
+# the image that actually ships. Build from the repo root:
+#   docker build -f docker/Dockerfile.train -t vision2words-train .
+
+FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY pyproject.toml ./
+COPY src/ src/
+RUN pip install --no-cache-dir --upgrade pip build \
+    && python3 -m build --wheel --outdir /wheels .
+
+
+FROM nvidia/cuda:12.6.3-runtime-ubuntu22.04 AS final
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 1000 v2w
+
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/*.whl pycocoevalcap \
+    && rm -rf /wheels
+
+WORKDIR /app
+COPY --chown=v2w:v2w configs/ configs/
+
+# data/, checkpoints/, and export/ are bind-mounted at `docker run` time
+# (see pipeline/main.nf and the README's Docker quickstart) -- never baked
+# into the image.
+USER v2w
+ENTRYPOINT ["v2w"]
+CMD ["--help"]

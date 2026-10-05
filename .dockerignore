@@ -1,0 +1,29 @@
+# Never ship the dataset, trained weights, or exported models in an image --
+# those are mounted as volumes or pulled from the Hugging Face Hub at
+# container runtime instead.
+data/
+checkpoints/
+export/
+
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# C++ build artifacts and fetched (platform-specific) third-party deps --
+# the cpp Dockerfile builds these fresh inside its own build stage.
+cpp/build/
+cpp/third_party/
+
+# README illustrations and generated figures aren't needed inside an image.
+Images/
+results/*.png
+
+notebooks/
+*.ipynb
+
+.vscode/
+.idea/
