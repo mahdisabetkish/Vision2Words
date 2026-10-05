@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="460" fill="#ffffff"/>
+
+  <!-- Input image -->
+  <rect x="20" y="190" width="110" height="80" rx="6" fill="#fdf6ec" stroke="#b8752a" stroke-width="2"/>
+  <text x="75" y="225" text-anchor="middle" font-size="13" fill="#211f1c">input</text>
+  <text x="75" y="243" text-anchor="middle" font-size="13" fill="#211f1c">image</text>
+
+  <line x1="130" y1="230" x2="172" y2="230" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Encoder -->
+  <rect x="175" y="170" width="160" height="120" rx="6" fill="#eef4f5" stroke="#2f6b7a" stroke-width="2"/>
+  <text x="255" y="218" text-anchor="middle" font-size="14" font-weight="bold" fill="#163c45">EfficientNet-B0</text>
+  <text x="255" y="236" text-anchor="middle" font-size="12" fill="#163c45">(frozen, ImageNet)</text>
+  <text x="255" y="258" text-anchor="middle" font-size="11" fill="#5b5649">224x224x3 in</text>
+  <text x="255" y="274" text-anchor="middle" font-size="11" fill="#5b5649">7x7x1280 out</text>
+
+  <line x1="335" y1="230" x2="377" y2="230" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Split into pooled / spatial -->
+  <rect x="380" y="70" width="150" height="70" rx="6" fill="#f3e4cc" stroke="#b8752a" stroke-width="2"/>
+  <text x="455" y="100" text-anchor="middle" font-size="13" font-weight="bold" fill="#6b4717">pooled</text>
+  <text x="455" y="118" text-anchor="middle" font-size="12" fill="#6b4717">1280-d vector</text>
+
+  <rect x="380" y="320" width="150" height="70" rx="6" fill="#dceaec" stroke="#2f6b7a" stroke-width="2"/>
+  <text x="455" y="350" text-anchor="middle" font-size="13" font-weight="bold" fill="#163c45">spatial grid</text>
+  <text x="455" y="368" text-anchor="middle" font-size="12" fill="#163c45">49 x 1280 tokens</text>
+
+  <path d="M 335 220 C 360 220, 360 105, 380 105" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 335 240 C 360 240, 360 355, 380 355" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Decoders -->
+  <rect x="580" y="30" width="190" height="80" rx="6" fill="#ffffff" stroke="#8a8370" stroke-width="2"/>
+  <text x="675" y="62" text-anchor="middle" font-size="13" font-weight="bold" fill="#211f1c">LSTM (baseline)</text>
+  <text x="675" y="80" text-anchor="middle" font-size="11" fill="#5b5649">no attention</text>
+  <text x="675" y="96" text-anchor="middle" font-size="11" fill="#5b5649">4.8M params</text>
+
+  <rect x="580" y="155" width="190" height="90" rx="6" fill="#f3e4cc" stroke="#b8752a" stroke-width="2"/>
+  <text x="675" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#6b4717">LSTM + attention</text>
+  <text x="675" y="203" text-anchor="middle" font-size="11" fill="#6b4717">Bahdanau, over 49 tokens</text>
+  <text x="675" y="219" text-anchor="middle" font-size="11" fill="#6b4717">6.2M params</text>
+  <text x="675" y="235" text-anchor="middle" font-size="11" fill="#6b4717">best: CIDEr 0.525</text>
+
+  <rect x="580" y="270" width="190" height="90" rx="6" fill="#dceaec" stroke="#2f6b7a" stroke-width="2"/>
+  <text x="675" y="300" text-anchor="middle" font-size="13" font-weight="bold" fill="#163c45">Transformer</text>
+  <text x="675" y="318" text-anchor="middle" font-size="11" fill="#163c45">4 layers, d_model 512</text>
+  <text x="675" y="334" text-anchor="middle" font-size="11" fill="#163c45">20.1M params</text>
+  <text x="675" y="350" text-anchor="middle" font-size="11" fill="#163c45">CIDEr 0.502</text>
+
+  <path d="M 455 70 C 455 50, 540 50, 540 70 C 540 70, 560 70, 580 70" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 530 100 C 555 100, 555 200, 580 200" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 530 355 C 555 355, 555 315, 580 315" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Output -->
+  <line x1="770" y1="70" x2="850" y2="70" stroke="#8a8370" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="770" y1="200" x2="850" y2="200" stroke="#b8752a" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="770" y1="315" x2="850" y2="315" stroke="#2f6b7a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="850" y="40" width="100" height="320" rx="6" fill="#efeee7" stroke="#8a8370" stroke-width="2"/>
+  <text x="900" y="190" text-anchor="middle" font-size="13" font-weight="bold" fill="#211f1c" transform="rotate(90 900 190)">caption (greedy / beam)</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#6b665a"/>
+    </marker>
+  </defs>
+</svg>

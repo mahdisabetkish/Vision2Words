@@ -1,188 +1,175 @@
+# Vision2Words
 
-# Image Captioning with EfficientNet-B0 and LSTM
+[![CI](https://github.com/mahdisabetkish/Vision2Words/actions/workflows/ci.yml/badge.svg)](https://github.com/mahdisabetkish/Vision2Words/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Space-vision2words-yellow)](https://huggingface.co/spaces/vision2words/vision2words)
 
-Welcome to the repository for my **Image Captioning** project! This project leverages the power of **EfficientNet-B0** for image feature extraction and an **LSTM** (Long Short-Term Memory) network for generating descriptive captions. Below, I'll walk you through the project, its components, and how you can get started.
+Image captioning on Flickr8k, comparing an LSTM decoder with Bahdanau attention against a Transformer decoder, both reading the same frozen EfficientNet-B0 features, with a C++/ONNX Runtime inference path and a from-scratch training pipeline behind them.
 
-## Table of Contents
+<p align="center">
+  <img src="results/sample_captions.png" alt="Sample captions from all three decoders on held-out test images" width="420">
+  &nbsp;&nbsp;
+  <img src="results/attention_maps.png" alt="Attention-LSTM attention maps, word by word" width="480">
+</p>
 
-1. [Introduction](#introduction)
-2. [Project Overview](#project-overview)
-3. [Installation](#installation)
-4. [EfficientNet](#EfficientNet)
-5. [LSTM](#LSTM)
-6. [Details](#details)
+*Left: captions from all three decoders on test-split images the models never saw during training. Right: what the attention decoder is looking at for each word it writes.*
 
-## Introduction
+## What this is
 
-Image captioning is a fascinating area of research that combines **Computer Vision** and **Natural Language Processing (NLP)**. The goal is to generate a textual description of an image, which can be useful in various applications like assistive technologies, image indexing, and more.
+The original version of this repository was a Flickr8k captioning prototype with a handful of real bugs: the model was trained to reproduce its input instead of predicting the next token, "epochs" meant one batch rather than a full pass over the data, nothing ran on GPU, and the saved checkpoint was never actually loaded back for inference. This repository is a full rebuild on top of that idea: a corrected training pipeline, two additional decoder architectures trained and evaluated against the original one, a C++ inference path that doesn't depend on Python or PyTorch at runtime, a Docker/Nextflow pipeline, and a Hugging Face Space.
 
-In this project, I used **EfficientNet-B0** as the backbone for extracting features from images and an **LSTM** network to generate captions based on those features. The model was trained on the **Flickr8k** dataset, which contains 8,091 images, each paired with five different captions.
+Everything below reports real, measured numbers from this codebase, not expected or typical results. If a step in the pipeline hasn't been run and verified, this README says so rather than assuming it works.
 
-## Project Overview
+## Architecture
 
-The project is divided into the following key components:
+<p align="center"><img src="docs/architecture.svg" alt="Encoder-decoder architecture diagram" width="820"></p>
 
-1. **Data Preprocessing**: The images are resized and normalized, and the captions are tokenized and padded.
-2. **Feature Extraction**: EfficientNet-B0 is used to extract features from the images.
-3. **Caption Generation**: An LSTM network is trained to generate captions based on the extracted features.
-4. **Model Training**: The model is trained using a combination of image features and captions.
-5. **Inference**: The trained model is used to generate captions for new images.
+A frozen EfficientNet-B0 (ImageNet weights, never fine-tuned here) encodes each image once. Its output feeds three interchangeable decoders through a shared interface:
 
+- **LSTM (baseline)** -- conditions on a single pooled 1280-d vector. No attention. This is the architecture closest to the original prototype, corrected.
+- **LSTM + attention** -- Bahdanau additive attention over the encoder's 7x7 spatial grid (49 tokens), re-weighted at every decoding step ("Show, Attend and Tell").
+- **Transformer** -- a 4-layer Transformer decoder, d_model 512, causal self-attention plus cross-attention into the same 49 spatial tokens.
 
-## Installation
+Feature extraction runs once and is cached to disk (`v2w extract-features`); training reads the cache, not the raw images, which is most of why training is fast on a single consumer GPU.
 
-To get started with this project, follow these steps:
+## Results
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/mahdisabetkish/Vision2Words.git
-   ```
-2. **install packages**
-   ```bash
-   pip install -r requirements.txt
-   ```
-   
-## EfficientNet-b0
-EfficientNet-B0 is a convolutional neural network (CNN) designed for high accuracy and computational efficiency. It introduces a novel **compound scaling method**, which balances the model's depth (number of layers), width (number of channels), and resolution (input image size) to achieve better performance with fewer resources.
+Flickr8k test split, 1000 images never seen during training. Full table and the figures above come from `v2w build-report`; raw numbers are in `results/metrics.json`.
 
-### Key Features:
-1. **Compound Scaling**:
-   - Instead of arbitrarily scaling one dimension (e.g., depth or width), EfficientNet scales all three dimensions simultaneously using a fixed scaling coefficient.
+| Decoder | Params | Decode | BLEU-4 | CIDEr | Latency (ms/img) |
+|---|---|---|---|---|---|
+| LSTM (baseline) | 4.8M | greedy | 0.172 | 0.443 | 15.4 |
+| LSTM (baseline) | 4.8M | beam k=3 | 0.188 | 0.485 | 39.4 |
+| LSTM + attention | 6.2M | greedy | 0.182 | 0.464 | 75.9 |
+| LSTM + attention | 6.2M | **beam k=3** | **0.202** | **0.525** | 176.0 |
+| Transformer | 20.1M | greedy | 0.181 | 0.460 | 93.9 |
+| Transformer | 20.1M | beam k=3 | 0.198 | 0.502 | 160.5 |
 
-2. **Architecture**:
-   - The network starts with an **initial convolutional layer** for feature extraction.
-   - It uses a series of **mobile inverted bottleneck convolution (MBConv)** layers, which combine depthwise separable convolutions and efficient skip connections.
-   - Each block extracts hierarchical features, refining details as the input progresses through the network.
-   - The final layers include **global average pooling** and a **fully connected classification head**.
+Both attention-based decoders beat the no-attention baseline on every metric, and the attention-LSTM edges out the Transformer -- a believable outcome rather than a surprising one, since the Transformer's extra parameters (20M vs 6M) have less room to pay off on a dataset this small. These numbers are also in the range published for similarly-sized models on Flickr8k, which is some evidence the pipeline is sound rather than silently broken in a way that happens to produce plausible-looking numbers.
 
-3. **Efficiency**:
-   - EfficientNet-B0 uses **fewer parameters** and FLOPs compared to traditional CNNs like ResNet or VGG while maintaining state-of-the-art accuracy.
-   - It performs well on a wide range of computer vision tasks, such as image classification, object detection, and segmentation.
+Latency here is decoder-only, measured on the training GPU (GTX 1080 Ti); see the C++ section below for a separate, apples-to-apples Python-vs-C++ comparison.
 
-EfficientNet-B0’s design demonstrates that thoughtful scaling and architecture optimization can lead to better trade-offs between performance and computational cost.
+## Quickstart
 
-## LSTM Neural Network
-**Long Short-Term Memory** (LSTM) is a type of recurrent neural network (RNN) designed to handle sequential data, such as time series, text, or speech. Unlike traditional RNNs, LSTMs excel at capturing long-term dependencies by addressing the problem of vanishing gradients during training
+### Python, pip
 
-<div align="center">
-  <img src="https://github.com/mahdisabetkish/Vision2Words/blob/main/Images/LSTMGIF.gif" alt="LSTM Neural Network" width="600px" style="border-radius: 15px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
-</div>
+```bash
+git clone https://github.com/mahdisabetkish/Vision2Words.git
+cd Vision2Words
+pip install -e ".[dev,export,metrics]"
 
-## Details
+v2w extract-features --raw-dir data/raw --feature-dir data/features --device cuda
+v2w train --config configs/lstm_attention.yaml
+v2w caption path/to/image.jpg --checkpoint checkpoints/lstm_attention/best.pt --vocab data/features/vocab.json --beam-size 3
+```
 
-### Custom DataLoader
+The dataset downloads automatically on first use (from a public Hugging Face mirror that already carries the standard 6000/1000/1000 train/val/test split) if `data/raw` isn't already populated. See `configs/` for the three decoder configs and `src/vision2words/cli.py` for every `v2w` subcommand.
 
-This custom DataLoader is designed for handling **image-caption pairs**, making it ideal for datasets like Flickr8k. It processes the data efficiently and prepares it for training deep learning models, such as those used for **image captioning tasks**.
+### Docker
 
-#### Key Features
+```bash
+docker build -f docker/Dockerfile.train -t vision2words-train .
+docker run --rm --gpus all -v "$(pwd)/data:/app/data" -v "$(pwd)/checkpoints:/app/checkpoints" \
+    vision2words-train train --config configs/lstm_attention.yaml
+```
 
-1. **Data Reading and Preprocessing**:
-   - Reads captions from a `.txt` file and pairs them with their corresponding image IDs.
-   - Preprocesses captions by:
-     - Converting to lowercase.
-     - Removing punctuation.
-     - Adding special tokens (`<START>`, `<END>`).
+A second, much smaller image (`docker/Dockerfile.inference`) carries only the compiled C++ binary and ONNX Runtime -- no Python, no CUDA. See `docker/README.md`.
 
-2. **Image Processing**:
-   - Resizes images to **224x224 pixels** using the `Albumentations` library.
-   - Converts images to tensors for compatibility with PyTorch models.
+### Nextflow
 
-3. **Vocabulary Creation**:
-   - Builds a unique vocabulary from all captions.
-   - Creates mappings for:
-     - **Word-to-index (`w2i`)** for tokenization.
-     - **Index-to-word (`i2w`)** for decoding.
+```bash
+nextflow run pipeline/main.nf -profile local,test   # a few minutes, tiny subset
+nextflow run pipeline/main.nf -profile docker        # the real thing, containerized
+```
 
-4. **Caption Tokenization and Padding**:
-   - Tokenizes captions using the `w2i` mapping.
-   - Pads all sentences to the same length with a `<PAD>` token for efficient batching.
+`main.nf` wires the whole project together: download data, cache features, train all three decoders in parallel, evaluate each, build the comparison report, export decoders A and B to ONNX, and benchmark the C++ port against Python. See `pipeline/README.md`.
 
-5. **Batch Collation**:
-   - Custom `collate_fn` ensures:
-     - Images are stacked into a tensor of shape `(batch_size, 3, 224, 224)`.
-     - Captions are tokenized and padded for model training.
-     - Metadata like image IDs and raw captions are preserved in the batch.
+### C++
 
+```bash
+cd cpp
+./scripts/fetch_third_party.sh          # or .ps1 on Windows
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
 
-#### How to Use
+v2w export-onnx --feature-dir ../data/features \
+    --lstm-attention-checkpoint ../checkpoints/lstm_attention/best.pt \
+    --transformer-checkpoint ../checkpoints/transformer/best.pt --out-dir ../export
 
-1. **Initialize the Dataset**:
-   ```python
-   data = Data(caption_file, image_dir)
-   loader_flicker = DataLoader(data, batch_size=32, shuffle=True, collate_fn=flicker_collate_fn)
+./build/v2w_caption path/to/image.jpg --model-dir ../export --decoder lstm_attention --beam-size 3
+```
 
-### `Engin` Model
+See `cpp/README.md` for the export strategy (the attention decoder exports differently from the Transformer, for reasons that come up specifically with ONNX) and the full build walkthrough.
 
-The `Engin` model combines the power of **EfficientNet-B0** for feature extraction with an **LSTM-based sequence model** to process both image features and tokenized text data. Below is a breakdown of how the model works:
+## C++ inference: does it actually match Python, and is it faster?
 
-#### Key Components:
-1. **EfficientNet-B0 Feature Extractor**:
-   - The model uses a pre-trained **EfficientNet-B0** as the backbone for image feature extraction.
-   - The last layer of the EfficientNet is removed (`[:-1]`), and a **flattening layer** is added to produce a feature vector of size `1280` for each image.
-   - The parameters of the EfficientNet feature extractor are **frozen** to avoid updating them during training, making the model more efficient.
+Measured on the training machine (Windows, GTX 1080 Ti, MSVC, ONNX Runtime 1.20.1 CPU execution provider). Full writeup in `results/cpp_report.md`.
 
-2. **Embedding Layer**:
-   - The text input (tokens) is passed through an **embedding layer** of size `(vocab_size + 4, embedd_size)` with a padding index of `3`.
-   - This layer converts token indices into dense vectors of size `embedd_size`.
+- **Parity**: 12 of 16 test captions matched Python exactly (beam search, two decoders, 8 images). The 4 mismatches are close paraphrases, not garbage, and trace to `stb_image_resize2`'s resize filter not being bit-identical to PIL's -- the exported ONNX graphs themselves were separately verified against PyTorch to ~1e-6 precision.
+- **Latency** (single image, model loaded once, mean of 50 runs):
 
-3. **LSTM Network**:
-   - A **2-layer LSTM** processes the combined features of the image and tokens. 
-   - The input to the LSTM is a combination of the image feature vector (`1280`) and the embedded token vectors, reshaped to match the token's batch dimensions.
+  | Decoder | Python (CPU) | Python (CUDA) | C++ (CPU, ONNX Runtime) |
+  |---|---|---|---|
+  | LSTM + attention | 138.2 ms | 147.1 ms | **27.8 ms** |
+  | Transformer | 221.7 ms | 202.3 ms | **182.8 ms** |
 
-4. **Fully Connected Layer**:
-   - The output of the LSTM is passed through a **fully connected layer** to map the hidden states to the embedding size (`embedd_size`).
+  C++ on CPU beats Python on both CPU and GPU here. That's not a GPU failing -- at batch size 1 with sequences under 20 tokens, kernel-launch and host/device transfer overhead outweighs the actual compute, while ONNX Runtime's CPU path has neither that round trip nor Python's per-step interpreter overhead.
 
-5. **Forward Pass**:
-   - **Image Input**: The image is processed by the EfficientNet feature extractor to generate a feature vector.
-   - **Token Input**: Tokens are embedded using the embedding layer.
-   - **Combining Features**: The image features are added to the reshaped token embeddings.
-   - **Sequence Modeling**: The combined features are passed through the LSTM to capture sequential dependencies.
-   - **Final Output**: The LSTM outputs are transformed into logits through the fully connected layer, and the embedded tokens are returned for further use.
+## Hugging Face Space
 
-#### Summary:
-The `Engin` model is designed to efficiently process **image and text inputs** in a unified framework. It extracts high-level image features using a pre-trained EfficientNet-B0 and combines them with token embeddings, which are then processed by an LSTM to capture sequential relationships. This architecture is useful for tasks such as **image captioning** or **vision-language tasks**.
+A Gradio app ([`app/`](app/)) that captions an uploaded image with both decoders side by side and shows the attention decoder's word-by-word attention map. Runs on the free CPU tier; weights load from a Hugging Face model repo via `hf_hub_download`, never committed to this repository. `scripts/push_model_to_hub.py` and `scripts/push_space_to_hub.py` publish it -- neither runs automatically.
 
-### Training the Vision-Language Model
+## Training details
 
-This script trains the `Engin` model on the **Flickr8k Dataset**, which combines image and caption data to learn a joint representation. Below is an explanation of the key steps in the training process.
+- **Data**: [Flickr8k](https://www.kaggle.com/datasets/adityajn105/flickr8k), 8,091 images, 5 captions each, the standard 6000/1000/1000 split (see Citation below). Never committed to this repository; downloaded on demand.
+- **Vocabulary**: words appearing at least 5 times in the training captions only, 2,541 words, plus `<PAD>`, `<START>`, `<END>`, `<UNK>`. Saved as JSON next to every checkpoint.
+- **Encoder**: EfficientNet-B0, ImageNet weights, frozen. 224x224 input, ImageNet normalization.
+- **Regularization**: dropout, weight decay, gradient clipping, `ReduceLROnPlateau`, early stopping on validation loss.
+- **Reproducibility**: every run is seeded (Python, NumPy, PyTorch), and the resolved config is saved alongside the checkpoint it produced. The decoders have no convolutions, so there's no cuDNN nondeterminism to fight either -- rerunning a config reproduces the same validation loss to the digit (checked, not assumed).
+- **Hardware**: a single GTX 1080 Ti. AMP is off by default (Pascal has no Tensor Cores, so there's nothing for it to buy).
+- **Logging**: CSV and TensorBoard, per run, under `checkpoints/<run>/`.
 
+## Testing
 
-#### Key Components:
+```bash
+pytest tests/ -v
+ruff check src/ tests/ scripts/ app/
+ruff format --check src/ tests/ scripts/ app/
+```
 
-1. **Data Preparation**:
-   - The `Data` class is used to preprocess images and captions.
-   - Captions are tokenized, padded, and embedded, while images are resized and passed through a feature extractor.
-   - The `loader_flicker` DataLoader is used to create batches of image-caption pairs for training.
+34 tests, well under 10 seconds on CPU: vocabulary round-tripping, dataset/collate shapes, forward-pass shapes for all three decoders, the attention decoder's `step()` function checked against its own `forward()`, greedy and beam decoding, a one-batch overfit sanity check, and ONNX export parity. GitHub Actions runs this plus a Docker build and a C++ build on every push and pull request.
 
-2. **Model Initialization**:
-   - The `Engin` model from the `Model` module is instantiated.
-   - Parameters include:
-     - `vocab_size`: Number of unique words in the vocabulary.
-     - `hidden_size`: Dimensionality of the LSTM's hidden state.
-     - `output_size` and `embedd_size`: Sizes for output and embeddings.
+## Project structure
 
-3. **Training Setup**:
-   - **Loss Function**: `CosineEmbeddingLoss` is used to minimize the difference in direction (cosine similarity) between predicted and target embeddings.
-   - **Optimizer**: Adam optimizer is configured with a learning rate of `0.001`.
+```
+src/vision2words/      the package: data, models, training, evaluation, inference
+  data/                 Flickr8k download, vocabulary, feature caching, dataset/collate
+  models/                three decoders behind one shared interface
+  training/              the corrected training loop
+  evaluation/             BLEU/CIDEr, decoding (greedy + beam), report/figure generation
+  inference/               single-image captioning, ONNX export
+configs/                YAML configs, one per decoder
+tests/                  pytest suite
+cpp/                    CMake project: ONNX Runtime inference, no Python at runtime
+docker/                 training/eval image (CUDA) and a slim CPU inference image
+pipeline/               Nextflow: the whole project, end to end
+app/                    the Gradio Space
+results/                metrics.json, comparison.md, figures, the C++ parity/benchmark report
+scripts/                one-off utilities: pushing to the Hub, the C++/Python parity check
+```
 
-4. **Training Loop**:
-   - The training runs for the specified number of epochs.
-   - In addition to Ids and captions, each batch from the DataLoader includes:
-     - `image`: Batch of image tensors.
-     - `token`: Tokenized captions, each with five variations (e.g., different descriptions for the same image).
-   - For each tokenized caption:
-     - Forward pass through the model to generate predicted embeddings (`logits`) and token embeddings.
-     - Compute the total loss by iterating over 40 tokens and comparing their embeddings with a target similarity of `1` using the loss function.
-   - The loss is backpropagated, and the optimizer updates the model weights.
-   - Loss values and iteration steps are logged for analysis.
+## Citation
 
-#### Summary:
+```bibtex
+@article{hodosh2013framing,
+  title={Framing image description as a ranking task: Data, models and evaluation metrics},
+  author={Hodosh, Micah and Young, Peter and Hockenmaier, Julia},
+  journal={Journal of Artificial Intelligence Research},
+  volume={47},
+  pages={853--899},
+  year={2013}
+}
+```
 
-This code implements a custom training loop for the `Engin` model to jointly learn representations of images and captions using a **vision-language approach**. The model leverages:
-- **EfficientNet-B0** for image feature extraction.
-- **LSTM** for sequential caption modeling.
-- **Cosine Embedding Loss** to align the embeddings of image features and their corresponding captions.
+## License
 
-By iterating over the data and optimizing the model parameters, the network learns to align image features with their textual descriptions.
-
-
+[MIT](LICENSE).
