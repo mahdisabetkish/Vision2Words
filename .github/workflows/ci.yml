@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, revamp]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the package and dev/export/metrics extras
+        run: pip install -e ".[dev,export,metrics]"
+
+      - name: Ruff lint
+        run: ruff check src/ tests/ scripts/ app/
+
+      - name: Ruff format check
+        run: ruff format --check src/ tests/ scripts/ app/
+
+      - name: pytest
+        run: pytest tests/ -v
+
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build training/eval image
+        run: docker build -f docker/Dockerfile.train -t vision2words-train .
+
+      - name: Build inference image
+        run: docker build -f docker/Dockerfile.inference -t vision2words-infer .
+
+  build-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+
+      - name: Fetch third-party deps (stb, nlohmann/json, ONNX Runtime)
+        run: bash cpp/scripts/fetch_third_party.sh
+
+      - name: Configure
+        run: cmake -S cpp -B cpp/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build cpp/build -- -j"$(nproc)"
+
+      - name: Binary exists and runs (prints usage, no model files here)
+        run: ./cpp/build/v2w_caption || true

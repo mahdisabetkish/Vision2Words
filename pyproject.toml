@@ -27,7 +27,7 @@ dependencies = [
 metrics = ["pycocoevalcap"]
 export = ["onnx>=1.16", "onnxruntime>=1.18"]
 app = ["gradio>=4.0"]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest>=8.0", "ruff>=0.6", "pre-commit>=3.7"]
 
 [project.scripts]
 v2w = "vision2words.cli:main"
