@@ -15,8 +15,6 @@
   <text x="255" y="258" text-anchor="middle" font-size="11" fill="#5b5649">224x224x3 in</text>
   <text x="255" y="274" text-anchor="middle" font-size="11" fill="#5b5649">7x7x1280 out</text>
 
-  <line x1="335" y1="230" x2="377" y2="230" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
-
   <!-- Split into pooled / spatial -->
   <rect x="380" y="70" width="150" height="70" rx="6" fill="#f3e4cc" stroke="#b8752a" stroke-width="2"/>
   <text x="455" y="100" text-anchor="middle" font-size="13" font-weight="bold" fill="#6b4717">pooled</text>
@@ -48,7 +46,7 @@
   <text x="675" y="350" text-anchor="middle" font-size="11" fill="#163c45">CIDEr 0.502</text>
 
   <path d="M 455 70 C 455 50, 540 50, 540 70 C 540 70, 560 70, 580 70" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
-  <path d="M 530 100 C 555 100, 555 200, 580 200" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 530 335 C 558 335, 558 205, 580 205" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
   <path d="M 530 355 C 555 355, 555 315, 580 315" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
 
   <!-- Output -->
