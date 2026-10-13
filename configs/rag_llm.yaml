@@ -1,0 +1,20 @@
+# Retrieval + local language model captioning. Nothing is trained: the
+# retriever indexes the cached training features and the language model is
+# used as-is from the Hugging Face Hub.
+data:
+  raw_dir: data/raw
+  feature_dir: data/features
+
+retrieval:
+  index_dir: data/retrieval   # shared with configs/transformer_rag.yaml
+  k: 5                        # neighbour images per query
+  per_neighbor: 2             # captions taken from each neighbour (10 per prompt)
+
+llm:
+  model: Qwen/Qwen2.5-0.5B-Instruct
+  max_new_tokens: 32
+  device: cuda
+  batch_size: 8
+
+eval:
+  split: test
