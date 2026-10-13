@@ -22,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 from vision2words.data.dataset import CaptionFeatureDataset, collate_captions
 from vision2words.data.flickr8k import ensure_data, load_captions, load_split
 from vision2words.data.vocabulary import Vocabulary
-from vision2words.models import build_decoder, feature_mode_for
+from vision2words.models import build_decoder, feature_mode_for, uses_retrieval
 from vision2words.training.engine import run_epoch
 from vision2words.utils.config import load_config, save_yaml
 from vision2words.utils.seed import set_seed
@@ -55,6 +55,29 @@ def _build_vocab(raw_dir: Path, feature_dir: Path, min_freq: int) -> Vocabulary:
     return vocab
 
 
+def _wrap_with_retrieval(config, feature_dir, captions, vocab, train_ds, val_ds):
+    """Attach retrieved captions to every example, for decoders that read them.
+
+    Imported lazily so the plain decoders never need FAISS installed.
+    """
+    from vision2words.retrieval.context import RetrievedContext, neighbors_for_split
+    from vision2words.retrieval.dataset import RetrievalCaptionDataset, collate_retrieval
+
+    context = RetrievedContext.from_config(config["retrieval"], vocab, feature_dir, captions)
+
+    wrapped = []
+    for split, base, sample in (("train", train_ds, True), ("val", val_ds, False)):
+        neighbors = neighbors_for_split(context.retriever, feature_dir, split, context.k)
+        wrapped.append(RetrievalCaptionDataset(base, neighbors, context, sample))
+    logger.info(
+        "retrieval: %d training images indexed, k=%d, %d caption(s) per neighbour",
+        len(context.retriever),
+        context.k,
+        context.per_neighbor,
+    )
+    return wrapped[0], wrapped[1], functools.partial(collate_retrieval, pad_id=vocab.pad_id)
+
+
 def train(config_path: str, overrides: list[str] | None = None) -> Path:
     config = load_config(config_path, overrides)
     set_seed(config["train"]["seed"])
@@ -72,6 +95,10 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
         feature_dir, "train", captions, vocab, feature_mode=feature_mode
     )
     val_ds = CaptionFeatureDataset(feature_dir, "val", captions, vocab, feature_mode=feature_mode)
+    if uses_retrieval(config["model"]["type"]):
+        train_ds, val_ds, collate = _wrap_with_retrieval(
+            config, feature_dir, captions, vocab, train_ds, val_ds
+        )
     train_loader = DataLoader(
         train_ds,
         batch_size=config["train"]["batch_size"],
@@ -147,6 +174,7 @@ def train(config_path: str, overrides: list[str] | None = None) -> Path:
                 {
                     "model_state": model.state_dict(),
                     "model_config": config["model"],
+                    "retrieval_config": config.get("retrieval"),
                     "epoch": epoch,
                     "val_loss": val_loss,
                     "num_params": num_params,

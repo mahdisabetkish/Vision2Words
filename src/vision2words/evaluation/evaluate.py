@@ -22,7 +22,7 @@ from vision2words.data.vocabulary import Vocabulary
 from vision2words.evaluation.decoding import beam_search, greedy_decode
 from vision2words.evaluation.metrics import compute_bleu_cider
 from vision2words.evaluation.sample_captions import load_checkpoint
-from vision2words.models import feature_mode_for
+from vision2words.models import feature_mode_for, uses_retrieval
 
 
 def _mean_epoch_seconds(ckpt_dir: Path) -> float | None:
@@ -57,9 +57,23 @@ def evaluate_checkpoint(
     image_ids = sorted({image_id for image_id, _ in dataset.pairs})
     references = {image_id: captions[image_id] for image_id in image_ids}
 
-    def _feature(image_id: str) -> torch.Tensor:
+    context = neighbors = None
+    if uses_retrieval(model_type):
+        # Retrieval comes from the training split only; eval images are queries.
+        from vision2words.retrieval.context import RetrievedContext, neighbors_for_split
+
+        retrieval_config = torch.load(ckpt_path, map_location="cpu", weights_only=False)[
+            "retrieval_config"
+        ]
+        context = RetrievedContext.from_config(retrieval_config, vocab, feature_dir, captions)
+        neighbors = neighbors_for_split(context.retriever, feature_dir, split, context.k)
+
+    def _feature(image_id: str):
         row = dataset.id_to_row[image_id]
-        return torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
+        image = torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
+        if context is not None:
+            return context.decoder_input(image, neighbors[image_id])
+        return image
 
     greedy_preds, start = {}, time.perf_counter()
     for image_id in image_ids:
