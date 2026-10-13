@@ -15,8 +15,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install the package and dev/export/metrics extras
-        run: pip install -e ".[dev,export,metrics]"
+      - name: Install the package and dev/export/metrics/rag extras
+        run: pip install -e ".[dev,export,metrics,rag]"
 
       - name: Ruff lint
         run: ruff check src/ tests/ scripts/ app/
