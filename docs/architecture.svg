@@ -45,7 +45,7 @@
   <text x="675" y="334" text-anchor="middle" font-size="11" fill="#163c45">20.1M params</text>
   <text x="675" y="350" text-anchor="middle" font-size="11" fill="#163c45">CIDEr 0.502</text>
 
-  <path d="M 455 70 C 455 50, 540 50, 540 70 C 540 70, 560 70, 580 70" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 530 90 C 557 90, 557 70, 580 70" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
   <path d="M 530 335 C 558 335, 558 205, 580 205" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
   <path d="M 530 355 C 555 355, 555 315, 580 315" fill="none" stroke="#6b665a" stroke-width="2" marker-end="url(#arrow)"/>
 
