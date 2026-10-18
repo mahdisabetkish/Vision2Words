@@ -1,7 +1,9 @@
 #!/usr/bin/env nextflow
-// End-to-end pipeline: download data, cache encoder features, train all
-// three decoders in parallel, evaluate each, build the comparison report,
-// export decoders A/B to ONNX, and benchmark the C++ port against Python.
+// End-to-end pipeline: download data, cache encoder features, index the
+// training features for retrieval, train all four decoders in parallel,
+// evaluate each, score retrieval + a local language model, build the
+// comparison report, export decoders A/B to ONNX, and benchmark the C++
+// port against Python.
 //
 // Every process body is just the same `v2w` CLI used manually throughout
 // this project -- the pipeline's job is orchestration (what runs in
@@ -46,6 +48,23 @@ process EXTRACT_FEATURES {
     """
 }
 
+process BUILD_INDEX {
+    label 'python_stage'
+    publishDir params.data_dir, mode: 'copy', overwrite: true
+
+    input:
+    path raw_data
+    path features
+
+    output:
+    path 'retrieval', emit: index_dir
+
+    script:
+    """
+    v2w build-index --raw-dir ${raw_data} --feature-dir ${features} --index-dir retrieval
+    """
+}
+
 process TRAIN {
     label 'python_stage'
     tag "${model_name}"
@@ -58,18 +77,23 @@ process TRAIN {
     tuple val(model_name), path(config_file)
     path features
     path raw_data
+    // Staged under the same relative name in every process that needs it,
+    // because the retrieval-augmented checkpoint stores that path and
+    // EVALUATE reads it back from there.
+    path 'retrieval'
 
     output:
     tuple val(model_name), path("${model_name}"), emit: checkpoints
 
     script:
+    def indexFlag = model_name.endsWith('_rag') ? '--set retrieval.index_dir=retrieval' : ''
     """
     v2w train --config ${config_file} \
         --set data.feature_dir=${features} \
         --set data.raw_dir=${raw_data} \
         --set train.ckpt_dir=${model_name} \
         --set train.device=${params.device} \
-        ${epochOverride()}
+        ${indexFlag} ${epochOverride()}
     """
 }
 
@@ -84,6 +108,7 @@ process EVALUATE {
     tuple val(model_name), path(checkpoint_dir)
     path features
     path raw_data
+    path 'retrieval'
 
     output:
     tuple val(model_name), path("${model_name}.json"), emit: result
@@ -97,6 +122,28 @@ process EVALUATE {
     """
 }
 
+process EVALUATE_RAG_LLM {
+    label 'python_stage'
+    publishDir params.results_dir, mode: 'copy', overwrite: true
+
+    input:
+    path raw_data
+    path features
+    path 'retrieval'
+
+    output:
+    path 'rag_llm.json', emit: result
+
+    script:
+    def limitFlag = params.rag_llm_limit ? "--limit ${params.rag_llm_limit}" : ''
+    """
+    v2w evaluate-rag-llm --config ${params.rag_llm_config} \
+        --set data.raw_dir=${raw_data} --set data.feature_dir=${features} \
+        --set retrieval.index_dir=retrieval --set llm.device=${params.device} \
+        ${limitFlag} --out rag_llm.json
+    """
+}
+
 process BUILD_REPORT {
     label 'python_stage'
     publishDir params.results_dir, mode: 'copy', overwrite: true
@@ -104,12 +151,16 @@ process BUILD_REPORT {
     input:
     path raw_data
     path features
+    path 'retrieval'
     path lstm_result
     path lstm_attention_result
     path transformer_result
+    path transformer_rag_result
+    path rag_llm_result
     tuple val(_a), path(lstm_ckpt)
     tuple val(_b), path(lstm_attention_ckpt)
     tuple val(_c), path(transformer_ckpt)
+    tuple val(_d), path(transformer_rag_ckpt)
 
     output:
     path 'metrics.json'
@@ -123,10 +174,13 @@ process BUILD_REPORT {
     cp ${lstm_result} results_in/lstm_baseline.json
     cp ${lstm_attention_result} results_in/lstm_attention.json
     cp ${transformer_result} results_in/transformer.json
+    cp ${transformer_rag_result} results_in/transformer_rag.json
+    cp ${rag_llm_result} results_in/rag_llm.json
     v2w build-report --raw-dir ${raw_data} --feature-dir ${features} --results-dir results_in \
         --lstm-checkpoint ${lstm_ckpt}/best.pt \
         --lstm-attention-checkpoint ${lstm_attention_ckpt}/best.pt \
         --transformer-checkpoint ${transformer_ckpt}/best.pt \
+        --transformer-rag-checkpoint ${transformer_rag_ckpt}/best.pt \
         --device ${params.device}
     mv results_in/metrics.json results_in/comparison.md results_in/sample_captions.png results_in/attention_maps.png .
     """
@@ -241,13 +295,16 @@ workflow {
         tuple('lstm_baseline', file(params.lstm_config)),
         tuple('lstm_attention', file(params.lstm_attention_config)),
         tuple('transformer', file(params.transformer_config)),
+        tuple('transformer_rag', file(params.transformer_rag_config)),
     )
 
     raw_data = DOWNLOAD_OR_LINK_DATA()
     features = EXTRACT_FEATURES(raw_data)
-    checkpoints = TRAIN(configs_ch, features, raw_data)
+    index_dir = BUILD_INDEX(raw_data, features)
+    checkpoints = TRAIN(configs_ch, features, raw_data, index_dir)
 
-    results = EVALUATE(checkpoints, features, raw_data)
+    results = EVALUATE(checkpoints, features, raw_data, index_dir)
+    rag_llm_result = EVALUATE_RAG_LLM(raw_data, features, index_dir)
 
     // Pick each named entry explicitly rather than relying on channel order,
     // so a re-ordering upstream can't silently swap which checkpoint a
@@ -255,12 +312,18 @@ workflow {
     lstm_ckpt = checkpoints.checkpoints.filter { it[0] == 'lstm_baseline' }
     attn_ckpt = checkpoints.checkpoints.filter { it[0] == 'lstm_attention' }
     tf_ckpt = checkpoints.checkpoints.filter { it[0] == 'transformer' }
+    rag_ckpt = checkpoints.checkpoints.filter { it[0] == 'transformer_rag' }
 
     lstm_result = results.result.filter { it[0] == 'lstm_baseline' }.map { it[1] }
     attn_result = results.result.filter { it[0] == 'lstm_attention' }.map { it[1] }
     tf_result = results.result.filter { it[0] == 'transformer' }.map { it[1] }
+    rag_result = results.result.filter { it[0] == 'transformer_rag' }.map { it[1] }
 
-    report_out = BUILD_REPORT(raw_data, features, lstm_result, attn_result, tf_result, lstm_ckpt, attn_ckpt, tf_ckpt)
+    report_out = BUILD_REPORT(
+        raw_data, features, index_dir,
+        lstm_result, attn_result, tf_result, rag_result, rag_llm_result,
+        lstm_ckpt, attn_ckpt, tf_ckpt, rag_ckpt
+    )
     export_out = EXPORT_ONNX(features, attn_ckpt, tf_ckpt)
     cpp_bin = BUILD_CPP()
     cpp_out = CPP_BENCHMARK(export_out, raw_data, features, cpp_bin, attn_ckpt, tf_ckpt)
