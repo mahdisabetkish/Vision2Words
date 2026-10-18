@@ -1,8 +1,13 @@
-"""Build the Phase 2 comparison artifacts from three already-evaluated
-checkpoints: results/metrics.json, results/comparison.md, and two figures
-(sample captions from all three decoders side by side, and an attention-map
+"""Build the comparison artifacts from already-evaluated checkpoints:
+results/metrics.json, results/comparison.md, and two figures (sample
+captions from every decoder side by side, and an attention-map
 visualization for the attention-LSTM decoder). Run `v2w evaluate` for each
-checkpoint first -- this only reads what that already wrote to results/.
+checkpoint first, and `v2w evaluate-rag-llm` for the language-model rows --
+this only reads what those already wrote to results/.
+
+The three original decoders are required. The retrieval-augmented decoder
+(transformer_rag.json) and the retrieval + language model run
+(rag_llm.json) are added when their result files are there.
 """
 
 from __future__ import annotations
@@ -21,20 +26,28 @@ from vision2words.data.flickr8k import ensure_data, load_captions
 from vision2words.data.vocabulary import Vocabulary
 from vision2words.evaluation.decoding import beam_search
 from vision2words.evaluation.sample_captions import load_checkpoint
-from vision2words.models import feature_mode_for
+from vision2words.models import feature_mode_for, uses_retrieval
 
 MODEL_LABELS = {
     "lstm": "LSTM (no attention)",
     "lstm_attention": "LSTM + attention",
     "transformer": "Transformer",
+    "transformer_rag": "Transformer + retrieval",
 }
 RESULT_NAMES = ("lstm_baseline", "lstm_attention", "transformer")
+OPTIONAL_DECODER_RESULTS = ("transformer_rag",)
+RAG_LLM_RESULT = "rag_llm"
 
 
 def build_metrics_json(results_dir: Path) -> dict:
+    names = list(RESULT_NAMES) + [
+        name
+        for name in (*OPTIONAL_DECODER_RESULTS, RAG_LLM_RESULT)
+        if (results_dir / f"{name}.json").exists()
+    ]
     combined = {
         name: json.loads((results_dir / f"{name}.json").read_text(encoding="utf-8"))
-        for name in RESULT_NAMES
+        for name in names
     }
     (results_dir / "metrics.json").write_text(
         json.dumps(combined, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -64,7 +77,7 @@ def build_comparison_table(combined: dict, results_dir: Path) -> None:
         "| " + " | ".join(columns) + " |",
         "|" + "---|" * len(columns),
     ]
-    for name in RESULT_NAMES:
+    for name in (n for n in combined if n != RAG_LLM_RESULT):
         data = combined[name]
         label = MODEL_LABELS[data["model_type"]]
         for decode_key, decode_label in (("greedy", "greedy"), ("beam", "beam k=3")):
@@ -74,7 +87,38 @@ def build_comparison_table(combined: dict, results_dir: Path) -> None:
                 f"{decode_label} | {m['bleu1']:.3f} | {m['bleu2']:.3f} | {m['bleu3']:.3f} | "
                 f"{m['bleu4']:.3f} | {m['cider']:.3f} | {m['latency_ms_per_image']:.1f} |"
             )
+    if RAG_LLM_RESULT in combined:
+        lines += _rag_llm_section(combined[RAG_LLM_RESULT])
     (results_dir / "comparison.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _rag_llm_section(data: dict) -> list[str]:
+    retrieval = data["retrieval"]
+    llm_name = data["llm"].split("/")[-1]
+    lines = [
+        "",
+        "## Retrieval + language model",
+        "",
+        f"Same test images and metric code. Each image retrieves its {retrieval['k']} nearest",
+        f"training images and takes {retrieval['captions_per_neighbor']} captions from each.",
+        "The consensus row picks the retrieved caption the others agree with most; the",
+        f"language-model row has {llm_name} write a caption from them. Neither sees the",
+        "image itself. Latency is the language model only, batch size",
+        f"{data['rag_llm']['batch_size']}, on {data['rag_llm']['device']}.",
+        "",
+        "| System | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | CIDEr | ms/img |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for label, m in (
+        ("Retrieval only (consensus caption)", data["retrieval_only"]),
+        (f"Retrieval + {llm_name}", data["rag_llm"]),
+    ):
+        latency = f"{m['latency_ms_per_image']:.1f}" if "latency_ms_per_image" in m else "-"
+        lines.append(
+            f"| {label} | {m['bleu1']:.3f} | {m['bleu2']:.3f} | {m['bleu3']:.3f} | "
+            f"{m['bleu4']:.3f} | {m['cider']:.3f} | {latency} |"
+        )
+    return lines
 
 
 def _pick_test_ids(feature_dir: Path, count: int, seed: int) -> list[str]:
@@ -96,6 +140,16 @@ def build_sample_figure(
     vocab = Vocabulary.load(feature_dir / "vocab.json")
 
     models = {name: load_checkpoint(path, vocab, device) for name, path in ckpt_paths.items()}
+    retrieval = {}
+    for name, (_model, model_type) in models.items():
+        if uses_retrieval(model_type):
+            from vision2words.retrieval.context import RetrievedContext, neighbors_for_split
+
+            context = RetrievedContext.for_checkpoint(
+                ckpt_paths[name], vocab, feature_dir, captions
+            )
+            neighbors = neighbors_for_split(context.retriever, feature_dir, "test", context.k)
+            retrieval[name] = (context, neighbors)
     datasets = {}
     for _name, (_model, model_type) in models.items():
         fm = feature_mode_for(model_type)
@@ -103,7 +157,9 @@ def build_sample_figure(
             fm, CaptionFeatureDataset(feature_dir, "test", captions, vocab, feature_mode=fm)
         )
 
-    fig, axes = plt.subplots(len(image_ids), 1, figsize=(5.5, 4.4 * len(image_ids)))
+    fig, axes = plt.subplots(
+        len(image_ids), 1, figsize=(5.5, (3.9 + 0.25 * len(models)) * len(image_ids))
+    )
     axes = np.atleast_1d(axes)
 
     for ax, image_id in zip(axes, image_ids, strict=True):
@@ -112,10 +168,13 @@ def build_sample_figure(
         ax.axis("off")
 
         lines = []
-        for _name, (model, model_type) in models.items():
+        for name, (model, model_type) in models.items():
             ds = datasets[feature_mode_for(model_type)]
             row = ds.id_to_row[image_id]
             feature = torch.from_numpy(ds.features[row].copy()).unsqueeze(0).to(device)
+            if name in retrieval:
+                context, neighbors = retrieval[name]
+                feature = context.decoder_input(feature, neighbors[image_id])
             generated = beam_search(
                 model, feature, vocab.start_id, vocab.end_id, beam_size=3, max_len=20
             )
@@ -224,6 +283,7 @@ def main() -> None:
     parser.add_argument("--lstm-checkpoint", required=True)
     parser.add_argument("--lstm-attention-checkpoint", required=True)
     parser.add_argument("--transformer-checkpoint", required=True)
+    parser.add_argument("--transformer-rag-checkpoint")
     parser.add_argument("--device", default="cpu")
     args = parser.parse_args()
 
@@ -232,6 +292,8 @@ def main() -> None:
         "lstm_attention": Path(args.lstm_attention_checkpoint),
         "transformer": Path(args.transformer_checkpoint),
     }
+    if args.transformer_rag_checkpoint:
+        checkpoints["transformer_rag"] = Path(args.transformer_rag_checkpoint)
     build_report(args.raw_dir, args.feature_dir, args.results_dir, checkpoints, args.device)
 
 

@@ -161,6 +161,9 @@ def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--lstm-checkpoint", required=True)
     p.add_argument("--lstm-attention-checkpoint", required=True)
     p.add_argument("--transformer-checkpoint", required=True)
+    p.add_argument(
+        "--transformer-rag-checkpoint", help="optional: add the retrieval-augmented decoder"
+    )
     p.add_argument("--device", default="cpu")
 
     def run(args: argparse.Namespace) -> None:
@@ -173,6 +176,8 @@ def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
             "lstm_attention": Path(args.lstm_attention_checkpoint),
             "transformer": Path(args.transformer_checkpoint),
         }
+        if args.transformer_rag_checkpoint:
+            checkpoints["transformer_rag"] = Path(args.transformer_rag_checkpoint)
         build_report(args.raw_dir, args.feature_dir, args.results_dir, checkpoints, args.device)
         print(f"wrote report to {args.results_dir}")
 
