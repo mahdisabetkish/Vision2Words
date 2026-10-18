@@ -83,10 +83,17 @@ to pay off than they would on a larger dataset like COCO or Flickr30k.
 
 ## Intended use
 
-A portfolio / teaching demonstration of two captioning architectures on a
-small, well-known dataset -- not a production captioning system. The
-Hugging Face Space built on these weights (see the repo this model card
-links to) is the intended way to try them interactively.
+A portfolio / teaching demonstration of three captioning decoders, one of
+them retrieval-augmented, on a small, well-known dataset -- not a
+production captioning system. To try them interactively, run the Gradio
+demo built on these weights:
+
+```bash
+docker run --rm -p 7860:7860 mahdisabetkish/vision2words-app
+```
+
+and open http://localhost:7860. Source and training code:
+https://github.com/mahdisabetkish/Vision2Words
 
 ## Limitations
 
@@ -94,7 +101,7 @@ links to) is the intended way to try them interactively.
   describe other kinds of images (documents, diagrams, abstract art)
   poorly or not at all.
 - Greedy decoding on the Transformer decoder can fall into a repetition
-  loop (e.g. repeating the same word); beam search (the Space's default)
+  loop (e.g. repeating the same word); beam search (the demo's default)
   avoids this reliably. This is a known property of greedy decoding with
   Transformer language models, not specific to this checkpoint.
 - Vocabulary is capped at 2,541 words; anything rarer becomes `<UNK>`.

@@ -1,4 +1,4 @@
-"""Gradio Space: upload a photograph, see captions from the attention-LSTM,
+"""Gradio demo: upload a photograph, see captions from the attention-LSTM,
 the Transformer and the retrieval-augmented Transformer side by side, a
 look at what the attention decoder was "looking at" for each word it
 wrote, and the training captions retrieval found for the photograph, which
@@ -6,9 +6,9 @@ a small language model can turn into a caption of its own.
 
 Weights are never stored in this repo -- they're pulled from a Hugging
 Face model repo via hf_hub_download and cached by huggingface_hub itself,
-so a Space restart doesn't mean a fresh download every time. CPU only,
-since that's what the free Spaces tier gives you; the decoders are small
-enough that a single caption takes well under a second. The language model
+so a restart doesn't mean a fresh download every time. CPU only, so it
+runs anywhere (Docker, a laptop, a Hugging Face Space); the decoders are
+small enough that a single caption takes well under a second. The language model
 is only loaded the first time someone asks for its caption.
 
 The retrieval-augmented decoder and its index are optional: if the model

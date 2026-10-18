@@ -21,7 +21,7 @@ model by evaluate_rag_llm:
 - The trained decoders in results/metrics.json, which do see the image.
 
 The default model is Qwen2.5-0.5B-Instruct (Apache-2.0, ~0.5B parameters),
-small enough to run on a CPU-only Hugging Face Space. It runs in float32 on
+small enough to run on CPU in the demo. It runs in float32 on
 GPU as well: the GTX 1080 Ti this project trains on is a Pascal card, whose
 half-precision throughput is a small fraction of its float32 throughput.
 
