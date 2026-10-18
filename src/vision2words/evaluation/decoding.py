@@ -17,12 +17,13 @@ from __future__ import annotations
 import torch
 
 from vision2words.models.base import CaptionDecoder
+from vision2words.models.inputs import RetrievalAugmentedInput, expand_for_beams
 
 
 @torch.no_grad()
 def greedy_decode(
     model: CaptionDecoder,
-    features: torch.Tensor,
+    features: torch.Tensor | RetrievalAugmentedInput,
     start_id: int,
     end_id: int,
     max_len: int = 20,
@@ -50,7 +51,7 @@ def greedy_decode(
 @torch.no_grad()
 def beam_search(
     model: CaptionDecoder,
-    features: torch.Tensor,
+    features: torch.Tensor | RetrievalAugmentedInput,
     start_id: int,
     end_id: int,
     beam_size: int = 3,
@@ -76,7 +77,7 @@ def beam_search(
 
     for _ in range(max_len):
         num_beams = sequences.size(0)
-        beam_features = features.expand(num_beams, *features.shape[1:])
+        beam_features = expand_for_beams(features, num_beams)
         logits = model(beam_features, sequences)
         log_probs = torch.log_softmax(logits[:, -1, :], dim=-1)
         vocab_size_hint = log_probs.size(-1)

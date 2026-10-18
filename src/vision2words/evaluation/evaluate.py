@@ -6,11 +6,17 @@ Latency here is decoder-only (features are read from the cache, same as
 training) since the encoder's cost is identical and fixed across every
 decoder in this comparison; Phase 3's benchmark covers full end-to-end
 (encoder + decoder) latency for Python vs the C++ port.
+
+For the retrieval-augmented decoder, ``shuffle_retrieval`` is a control:
+every image gets the neighbours retrieved for a different, randomly chosen
+image of the same split. If the decoder's gain comes from what it
+retrieves, scores should fall below the plain Transformer's.
 """
 
 from __future__ import annotations
 
 import csv
+import random
 import time
 from pathlib import Path
 
@@ -22,7 +28,7 @@ from vision2words.data.vocabulary import Vocabulary
 from vision2words.evaluation.decoding import beam_search, greedy_decode
 from vision2words.evaluation.metrics import compute_bleu_cider
 from vision2words.evaluation.sample_captions import load_checkpoint
-from vision2words.models import feature_mode_for
+from vision2words.models import feature_mode_for, uses_retrieval
 
 
 def _mean_epoch_seconds(ckpt_dir: Path) -> float | None:
@@ -36,6 +42,15 @@ def _mean_epoch_seconds(ckpt_dir: Path) -> float | None:
     return sum(float(row["epoch_seconds"]) for row in rows) / len(rows)
 
 
+def _shuffled(neighbors: dict[str, list[str]], seed: int = 0) -> dict[str, list[str]]:
+    """Give every image another image's neighbours. Walking a shuffled cycle
+    guarantees nobody keeps their own.
+    """
+    order = sorted(neighbors)
+    random.Random(seed).shuffle(order)
+    return {image_id: neighbors[order[(i + 1) % len(order)]] for i, image_id in enumerate(order)}
+
+
 def evaluate_checkpoint(
     ckpt_path: str | Path,
     raw_dir: str | Path,
@@ -44,6 +59,7 @@ def evaluate_checkpoint(
     device: str = "cpu",
     beam_size: int = 3,
     max_len: int = 20,
+    shuffle_retrieval: bool = False,
 ) -> dict:
     ckpt_path = Path(ckpt_path)
     feature_dir = Path(feature_dir)
@@ -57,9 +73,24 @@ def evaluate_checkpoint(
     image_ids = sorted({image_id for image_id, _ in dataset.pairs})
     references = {image_id: captions[image_id] for image_id in image_ids}
 
-    def _feature(image_id: str) -> torch.Tensor:
+    context = neighbors = None
+    if uses_retrieval(model_type):
+        # Retrieval comes from the training split only; eval images are queries.
+        from vision2words.retrieval.context import RetrievedContext, neighbors_for_split
+
+        context = RetrievedContext.for_checkpoint(ckpt_path, vocab, feature_dir, captions)
+        neighbors = neighbors_for_split(context.retriever, feature_dir, split, context.k)
+        if shuffle_retrieval:
+            neighbors = _shuffled(neighbors)
+    elif shuffle_retrieval:
+        raise ValueError(f"{model_type} doesn't use retrieval, so there is nothing to shuffle")
+
+    def _feature(image_id: str):
         row = dataset.id_to_row[image_id]
-        return torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
+        image = torch.from_numpy(dataset.features[row].copy()).unsqueeze(0).to(device)
+        if context is not None:
+            return context.decoder_input(image, neighbors[image_id])
+        return image
 
     greedy_preds, start = {}, time.perf_counter()
     for image_id in image_ids:
@@ -81,6 +112,7 @@ def evaluate_checkpoint(
         "mean_train_epoch_seconds": _mean_epoch_seconds(ckpt_path.parent),
         "split": split,
         "num_images": len(image_ids),
+        **({"retrieval_shuffled": True} if shuffle_retrieval else {}),
         "greedy": {
             **compute_bleu_cider(greedy_preds, references),
             "latency_ms_per_image": greedy_latency_ms,
@@ -105,11 +137,18 @@ def main() -> None:
     parser.add_argument("--split", default="test")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--beam-size", type=int, default=3)
+    parser.add_argument("--shuffle-retrieval", action="store_true")
     parser.add_argument("--out", help="write the result as JSON to this path")
     args = parser.parse_args()
 
     result = evaluate_checkpoint(
-        args.checkpoint, args.raw_dir, args.feature_dir, args.split, args.device, args.beam_size
+        args.checkpoint,
+        args.raw_dir,
+        args.feature_dir,
+        args.split,
+        args.device,
+        args.beam_size,
+        shuffle_retrieval=args.shuffle_retrieval,
     )
     text = json.dumps(result, indent=2, ensure_ascii=False)
     print(text)

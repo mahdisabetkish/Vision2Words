@@ -1,7 +1,8 @@
 /* Vision2Words Space theme: a darkroom / contact-sheet identity.
-   Two decoders, two identity colors -- amber for the attention-LSTM
+   One identity color per decoder -- amber for the attention-LSTM
    (it literally produces warm heatmaps), teal for the Transformer
-   (cooler, more structured). Fraunces for display type, IBM Plex Sans
+   (cooler, more structured), sage for everything that reads retrieved
+   captions. Fraunces for display type, IBM Plex Sans
    for body/UI, IBM Plex Mono for generated captions and stats -- set as
    the Gradio theme's fonts, this file only carries layout + color. */
 
@@ -17,6 +18,9 @@
     --v2w-teal: #2f6b7a;
     --v2w-teal-soft: #dceaec;
     --v2w-teal-ink: #163c45;
+    --v2w-sage: #5d7a45;
+    --v2w-sage-soft: #e3ead9;
+    --v2w-sage-ink: #2f4220;
 }
 
 .dark {
@@ -31,6 +35,9 @@
     --v2w-teal: #6fb4c4;
     --v2w-teal-soft: #16323a;
     --v2w-teal-ink: #bfe4ea;
+    --v2w-sage: #9dbf7e;
+    --v2w-sage-soft: #24301b;
+    --v2w-sage-ink: #d3e6c0;
 }
 
 .gradio-container {
@@ -100,6 +107,7 @@
 
 .v2w-specimen.v2w-amber { border-left: 4px solid var(--v2w-amber); }
 .v2w-specimen.v2w-teal { border-left: 4px solid var(--v2w-teal); }
+.v2w-specimen.v2w-sage { border-left: 4px solid var(--v2w-sage); }
 
 .v2w-specimen-label {
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -113,6 +121,7 @@
 
 .v2w-amber .v2w-specimen-label { color: var(--v2w-amber-ink); }
 .v2w-teal .v2w-specimen-label { color: var(--v2w-teal-ink); }
+.v2w-sage .v2w-specimen-label { color: var(--v2w-sage-ink); }
 
 .v2w-dot {
     width: 7px;
@@ -122,6 +131,7 @@
 }
 .v2w-amber .v2w-dot { background: var(--v2w-amber); }
 .v2w-teal .v2w-dot { background: var(--v2w-teal); }
+.v2w-sage .v2w-dot { background: var(--v2w-sage); }
 
 .v2w-caption-text {
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -169,6 +179,66 @@
     background-image: repeating-linear-gradient(90deg, var(--v2w-paper) 0 6px, transparent 6px 14px);
     opacity: 0.35;
     margin-bottom: 6px;
+}
+
+/* ---- Retrieved neighbours --------------------------------------------- */
+
+.v2w-neighbours {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.v2w-neighbour {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--v2w-paper-raised);
+    border: 1px solid var(--v2w-line);
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.v2w-neighbour-rank {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.8rem;
+    color: var(--v2w-sage);
+    padding-top: 2px;
+}
+
+.v2w-neighbour-body { flex: 1; min-width: 0; }
+
+.v2w-neighbour-caption {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.88rem;
+    color: var(--v2w-ink);
+}
+
+.v2w-neighbour-meta {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+    color: var(--v2w-ink-soft);
+    margin: 2px 0 4px;
+}
+
+.v2w-neighbour-bar {
+    height: 3px;
+    background: var(--v2w-sage-soft);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.v2w-neighbour-bar span {
+    display: block;
+    height: 100%;
+    background: var(--v2w-sage);
+}
+
+.v2w-note {
+    font-size: 0.78rem;
+    color: var(--v2w-ink-soft);
+    margin-top: 6px;
 }
 
 footer { display: none !important; }

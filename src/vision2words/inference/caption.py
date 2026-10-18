@@ -14,7 +14,7 @@ from PIL import Image
 
 from vision2words.data.vocabulary import Vocabulary
 from vision2words.evaluation.decoding import beam_search, greedy_decode
-from vision2words.models import build_decoder, feature_mode_for
+from vision2words.models import build_decoder, feature_mode_for, uses_retrieval
 from vision2words.models.encoder import EncoderCNN
 
 
@@ -51,6 +51,15 @@ def caption_image(
 
     pooled, spatial = encoder(tensor)
     features = pooled if feature_mode == "pooled" else spatial
+
+    if uses_retrieval(model_type):
+        # A new image isn't in the training index, so there's nothing to
+        # exclude: search with the live encoder's pooled vector directly.
+        from vision2words.retrieval.context import RetrievedContext
+
+        context = RetrievedContext.for_checkpoint(ckpt_path, vocab)
+        neighbor_ids = [n.image_id for n in context.neighbors(pooled.cpu().numpy())]
+        features = context.decoder_input(spatial, neighbor_ids)
 
     if beam_size > 1:
         generated = beam_search(decoder, features, vocab.start_id, vocab.end_id, beam_size, max_len)

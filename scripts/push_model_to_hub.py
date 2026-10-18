@@ -1,4 +1,5 @@
-"""Push the two decoder checkpoints + vocab to a Hugging Face model repo.
+"""Push the decoder checkpoints + vocab to a Hugging Face model repo, and
+optionally the retrieval-augmented decoder with the index it reads from.
 
 Does NOT run automatically as part of any other command -- call it by
 hand, deliberately, when you've decided to publish. Reads the token from
@@ -24,7 +25,11 @@ def push_model(
     vocab_path: Path,
     model_card_path: Path,
     private: bool = False,
+    transformer_rag_ckpt: Path | None = None,
+    index_dir: Path | None = None,
 ) -> None:
+    if (transformer_rag_ckpt is None) != (index_dir is None):
+        raise ValueError("the retrieval-augmented checkpoint and the index go up together")
     api = HfApi()
     api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=private)
 
@@ -34,6 +39,13 @@ def push_model(
         shutil.copy(transformer_ckpt, tmp / "transformer.pt")
         shutil.copy(vocab_path, tmp / "vocab.json")
         shutil.copy(model_card_path, tmp / "README.md")
+        if transformer_rag_ckpt is not None:
+            from vision2words.retrieval.index import CAPTIONS_FILE, IDS_FILE, INDEX_FILE
+
+            shutil.copy(transformer_rag_ckpt, tmp / "transformer_rag.pt")
+            (tmp / "retrieval").mkdir()
+            for name in (INDEX_FILE, IDS_FILE, CAPTIONS_FILE):
+                shutil.copy(index_dir / name, tmp / "retrieval" / name)
 
         api.upload_folder(folder_path=str(tmp), repo_id=repo_id, repo_type="model")
 
@@ -47,6 +59,10 @@ def main() -> None:
     parser.add_argument("--transformer-checkpoint", default="checkpoints/transformer/best.pt")
     parser.add_argument("--vocab", default="data/features/vocab.json")
     parser.add_argument("--model-card", default="app/model_card.md")
+    parser.add_argument(
+        "--transformer-rag-checkpoint", help="e.g. checkpoints/transformer_rag/best.pt"
+    )
+    parser.add_argument("--index-dir", help="the retrieval index, e.g. data/retrieval")
     parser.add_argument("--private", action="store_true")
     args = parser.parse_args()
 
@@ -57,6 +73,8 @@ def main() -> None:
         Path(args.vocab),
         Path(args.model_card),
         args.private,
+        Path(args.transformer_rag_checkpoint) if args.transformer_rag_checkpoint else None,
+        Path(args.index_dir) if args.index_dir else None,
     )
 
 

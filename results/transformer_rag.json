@@ -1,0 +1,36 @@
+{
+  "model_type": "transformer_rag",
+  "num_params": 23229933,
+  "mean_train_epoch_seconds": 77.71538461538462,
+  "split": "test",
+  "num_images": 1000,
+  "greedy": {
+    "bleu1": 0.5861502800849346,
+    "bleu2": 0.4063461182848449,
+    "bleu3": 0.27349288754866313,
+    "bleu4": 0.18090218123550683,
+    "cider": 0.477455030531729,
+    "latency_ms_per_image": 125.7627939999802
+  },
+  "beam": {
+    "bleu1": 0.5995929318160237,
+    "bleu2": 0.42132205234304454,
+    "bleu3": 0.29203848107297065,
+    "bleu4": 0.19993583301859993,
+    "cider": 0.530972094368081,
+    "latency_ms_per_image": 209.1541384999873,
+    "beam_size": 3
+  },
+  "sample_predictions": {
+    "1056338697_4f7d7ce270.jpg": "a girl in blue shorts is being held by a blue <UNK>",
+    "106490881_5a2dd9b7bd.jpg": "a boy in blue shorts is running through the water",
+    "1082379191_ec1e53f996.jpg": "a man and a woman sit on a bench",
+    "1084040636_97d9633581.jpg": "a dog with a red collar is running in a <UNK>",
+    "1096395242_fc69f0ae5a.jpg": "a little boy in a blue shirt is holding a green toy",
+    "1107246521_d16a476380.jpg": "a black dog is running through a grassy area",
+    "1119015538_e8e796281e.jpg": "a brown dog is running through a grassy area",
+    "1122944218_8eb3607403.jpg": "a baby with a <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK> <UNK>",
+    "1131800850_89c7ffd477.jpg": "a dog with a blue collar is running through the water",
+    "1131932671_c8d17751b3.jpg": "a little boy is jumping on a bed"
+  }
+}

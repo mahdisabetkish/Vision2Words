@@ -3,11 +3,19 @@
 `main.nf` runs the whole project end to end:
 
 ```
-download_or_link_data -> extract_features -> [train_lstm_baseline, train_lstm_attention, train_transformer in parallel]
-    -> evaluate (each) -> build_report
+download_or_link_data -> extract_features -> build_index
+    -> [train lstm_baseline, lstm_attention, transformer, transformer_rag in parallel]
+    -> evaluate (each)
+    -> evaluate_rag_llm (retrieval + language model, needs only the index)
+    -> build_report
     -> export_onnx (decoders A/B) -> build_cpp -> cpp_benchmark
     -> report
 ```
+
+`build_index` runs once and its output is staged into every process that
+reads it under the same name, `retrieval/`. That matters because the
+retrieval-augmented checkpoint stores the index path it was trained with,
+and `evaluate` reads it back from there.
 
 Every process body is the same `v2w` CLI command you'd run by hand -- the
 pipeline's job is orchestrating what runs in parallel and wiring file
@@ -44,7 +52,9 @@ the same as inspecting a manual run's.
 `params.max_images = 24` caps each split to 24 images (`extract-features
 --max-images`), `params.epochs = 1` trains for exactly one epoch per
 model (and sets `data.min_word_freq=1`, since 24 images' captions don't
-repeat any word 5 times), and `params.beam_size = 2`. None of that is a
+repeat any word 5 times), `params.beam_size = 2`, and
+`params.rag_llm_limit = 4`, which scores the language model on four test
+images only (it still downloads the model, about 1 GB). None of that is a
 separate code path -- it's the same config-override mechanism (`--set`)
 used everywhere else in this project, just driven by Nextflow params
 instead of typed by hand.
@@ -57,6 +67,11 @@ Verified on Ubuntu 24.04 (CPU, 4 cores, no GPU):
   completion. This profile trains each model for one epoch on 24 images, so
   its captions are empty and its parity and benchmark numbers only prove the
   wiring. Use the real checkpoints for a meaningful parity check.
+- The retrieval stages (`build_index`, `transformer_rag` in `train` and
+  `evaluate`, `evaluate_rag_llm`) were added after that run and have not
+  been through Nextflow yet. Every command they call was run by hand on
+  the Windows training machine with the full dataset, but the wiring
+  between them needs another `-profile local,test` run on Linux.
 - `-profile docker,test` and `-profile gpu,test` are not run yet. The
   `vision2words-train` image builds in CI, but it hasn't been run through this
   pipeline, and the GPU profile needs an NVIDIA GPU, which the test machine

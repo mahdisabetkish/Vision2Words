@@ -126,6 +126,11 @@ def _add_evaluate(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--split", default="test")
     p.add_argument("--device", default="cpu")
     p.add_argument("--beam-size", type=int, default=3)
+    p.add_argument(
+        "--shuffle-retrieval",
+        action="store_true",
+        help="control run: give each image another image's retrieved captions",
+    )
     p.add_argument("--out", help="write the result as JSON to this path")
 
     def run(args: argparse.Namespace) -> None:
@@ -140,6 +145,7 @@ def _add_evaluate(subparsers: argparse._SubParsersAction) -> None:
             args.split,
             args.device,
             args.beam_size,
+            shuffle_retrieval=args.shuffle_retrieval,
         )
         text = json.dumps(result, indent=2, ensure_ascii=False)
         print(text)
@@ -161,6 +167,9 @@ def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--lstm-checkpoint", required=True)
     p.add_argument("--lstm-attention-checkpoint", required=True)
     p.add_argument("--transformer-checkpoint", required=True)
+    p.add_argument(
+        "--transformer-rag-checkpoint", help="optional: add the retrieval-augmented decoder"
+    )
     p.add_argument("--device", default="cpu")
 
     def run(args: argparse.Namespace) -> None:
@@ -173,6 +182,8 @@ def _add_build_report(subparsers: argparse._SubParsersAction) -> None:
             "lstm_attention": Path(args.lstm_attention_checkpoint),
             "transformer": Path(args.transformer_checkpoint),
         }
+        if args.transformer_rag_checkpoint:
+            checkpoints["transformer_rag"] = Path(args.transformer_rag_checkpoint)
         build_report(args.raw_dir, args.feature_dir, args.results_dir, checkpoints, args.device)
         print(f"wrote report to {args.results_dir}")
 
@@ -204,6 +215,109 @@ def _add_export_onnx(subparsers: argparse._SubParsersAction) -> None:
     p.set_defaults(run=run)
 
 
+def _add_build_index(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "build-index", help="index the cached training features for retrieval (FAISS)"
+    )
+    p.add_argument("--raw-dir", required=True)
+    p.add_argument("--feature-dir", required=True)
+    p.add_argument("--index-dir", default="data/retrieval")
+
+    def run(args: argparse.Namespace) -> None:
+        from vision2words.data.flickr8k import ensure_data, load_captions
+        from vision2words.retrieval.index import CaptionRetriever
+
+        captions = load_captions(ensure_data(args.raw_dir))
+        retriever = CaptionRetriever.build(args.feature_dir, captions)
+        retriever.save(args.index_dir)
+        print(f"indexed {len(retriever)} training images -> {args.index_dir}")
+
+    p.set_defaults(run=run)
+
+
+def _add_evaluate_rag_llm(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "evaluate-rag-llm", help="BLEU/CIDEr for retrieval + local language model captioning"
+    )
+    p.add_argument("--config", default="configs/rag_llm.yaml")
+    p.add_argument("--set", dest="overrides", action="append", default=[])
+    p.add_argument("--limit", type=int, help="only the first N images (quick checks)")
+    p.add_argument("--out", help="write the result as JSON to this path")
+
+    def run(args: argparse.Namespace) -> None:
+        import json
+        from pathlib import Path
+
+        from vision2words.evaluation.evaluate_rag_llm import evaluate_rag_llm
+        from vision2words.retrieval.llm_captioner import LLMCaptioner
+        from vision2words.utils.config import load_config
+
+        cfg = load_config(args.config, args.overrides)
+        captioner = LLMCaptioner(
+            cfg["llm"]["model"], cfg["llm"]["device"], cfg["llm"]["max_new_tokens"]
+        )
+        result = evaluate_rag_llm(
+            cfg["data"]["raw_dir"],
+            cfg["data"]["feature_dir"],
+            cfg["retrieval"]["index_dir"],
+            split=cfg["eval"]["split"],
+            k=cfg["retrieval"]["k"],
+            per_neighbor=cfg["retrieval"]["per_neighbor"],
+            order=cfg["retrieval"].get("order", "retrieval"),
+            device=cfg["llm"]["device"],
+            batch_size=cfg["llm"]["batch_size"],
+            limit=args.limit,
+            captioner=captioner,
+        )
+        text = json.dumps(result, indent=2, ensure_ascii=False)
+        print(text)
+        if args.out:
+            Path(args.out).write_text(text, encoding="utf-8")
+
+    p.set_defaults(run=run)
+
+
+def _add_caption_llm(subparsers: argparse._SubParsersAction) -> None:
+    p = subparsers.add_parser(
+        "caption-llm", help="caption one image with retrieval + a local language model"
+    )
+    p.add_argument("image")
+    p.add_argument("--config", default="configs/rag_llm.yaml")
+    p.add_argument("--set", dest="overrides", action="append", default=[])
+
+    def run(args: argparse.Namespace) -> None:
+        import torch
+        from PIL import Image
+
+        from vision2words.models.encoder import EncoderCNN
+        from vision2words.retrieval.index import CaptionRetriever
+        from vision2words.retrieval.llm_captioner import (
+            LLMCaptioner,
+            neighbour_captions,
+            rank_by_agreement,
+        )
+        from vision2words.utils.config import load_config
+
+        cfg = load_config(args.config, args.overrides)
+        device = cfg["llm"]["device"]
+        encoder = EncoderCNN(fine_tune=False).to(device).eval()
+        tensor = EncoderCNN.preprocess()(Image.open(args.image).convert("RGB")).unsqueeze(0)
+        with torch.no_grad():
+            pooled, _spatial = encoder(tensor.to(device))
+
+        retriever = CaptionRetriever.load(cfg["retrieval"]["index_dir"])
+        hits = retriever.search(pooled.cpu().numpy(), cfg["retrieval"]["k"])[0]
+        context = neighbour_captions(
+            retriever, [h.image_id for h in hits], cfg["retrieval"]["per_neighbor"]
+        )
+        if cfg["retrieval"].get("order", "retrieval") == "agreement":
+            context = rank_by_agreement(context)
+        captioner = LLMCaptioner(cfg["llm"]["model"], device, cfg["llm"]["max_new_tokens"])
+        print(captioner.caption(context))
+
+    p.set_defaults(run=run)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="v2w", description="Vision2Words CLI")
     parser.add_argument("-v", "--verbose", action="store_true", help="enable debug logging")
@@ -217,6 +331,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_evaluate(subparsers)
     _add_build_report(subparsers)
     _add_export_onnx(subparsers)
+    _add_build_index(subparsers)
+    _add_evaluate_rag_llm(subparsers)
+    _add_caption_llm(subparsers)
 
     return parser
 

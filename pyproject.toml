@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vision2words"
-version = "0.1.0"
-description = "Image captioning on Flickr8k with an EfficientNet-B0 encoder and LSTM/Transformer decoders"
+version = "0.2.0"
+description = "Image captioning on Flickr8k with an EfficientNet-B0 encoder, LSTM/Transformer decoders, and retrieval augmentation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -27,6 +27,7 @@ dependencies = [
 metrics = ["pycocoevalcap"]
 export = ["onnx>=1.16", "onnxruntime>=1.18"]
 app = ["gradio>=5.0,<6"]
+rag = ["faiss-cpu>=1.8", "transformers>=4.56"]
 dev = ["pytest>=8.0", "ruff>=0.6", "pre-commit>=3.7"]
 
 [project.scripts]

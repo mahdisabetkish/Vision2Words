@@ -1,0 +1,38 @@
+# Retrieval-augmented Transformer decoder. Identical to configs/transformer.yaml
+# in every setting the two share, so the only difference between their
+# results is the retrieved captions in the decoder's memory.
+data:
+  raw_dir: data/raw
+  feature_dir: data/features
+  min_word_freq: 5
+
+model:
+  type: transformer_rag
+  feature_size: 1280
+  d_model: 512
+  num_layers: 4
+  num_heads: 8
+  ff_size: 2048
+  dropout: 0.1
+  max_len: 64
+  max_retrieved_len: 96       # k * max_caption_tokens, with headroom
+  text_encoder_layers: 1
+
+retrieval:
+  index_dir: data/retrieval   # built from the cached training features on first use
+  k: 4                        # neighbour images per query
+  per_neighbor: 1             # captions taken from each neighbour
+  max_caption_tokens: 20
+
+train:
+  device: cuda
+  seed: 1337
+  batch_size: 64
+  num_workers: 2
+  lr: 0.0003
+  weight_decay: 0.00001
+  grad_clip_norm: 5.0
+  lr_patience: 3
+  epochs: 60
+  early_stopping_patience: 10
+  ckpt_dir: checkpoints/transformer_rag
