@@ -48,7 +48,10 @@ the root README's C++ section) and must contain `vocab.json`, `encoder.onnx`, an
 ## Demo (`vision2words-app`)
 
 The Gradio demo, built from `docker/Dockerfile.app`. The trained decoders
-download from Hugging Face on first start:
+download from Hugging Face on first start. If the model repo also has the
+retrieval-augmented decoder and its index, the demo shows a third caption
+and a Retrieval tab; the language model behind that tab downloads the first
+time someone asks for its caption.
 
 ```bash
 docker run --rm -p 7860:7860 mahdisabetkish/vision2words-app
@@ -73,6 +76,10 @@ Status on Ubuntu 24.04, CPU only:
   (see the root README).
 - `vision2words-app` builds, serves the Gradio page, and returns captions
   from the published model.
+- The retrieval dependencies (`faiss-cpu`, `transformers`) were added to
+  `vision2words-train` and `vision2words-app` after the checks above. Both
+  images need rebuilding before they're pushed again, and the app image
+  should be checked against a model repo that has the retrieval files.
 - `vision2words-train` builds in CI (GitHub Actions, `build-docker` job). It
   has not been run on a GPU host, so the training path inside the container
   is untested on real hardware.
