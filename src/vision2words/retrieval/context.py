@@ -76,6 +76,18 @@ class RetrievedContext:
             retrieval_config.get("per_neighbor", 1),
         )
 
+    @classmethod
+    def for_checkpoint(
+        cls,
+        ckpt_path: str | Path,
+        vocab: Vocabulary,
+        feature_dir: str | Path | None = None,
+        captions: dict[str, list[str]] | None = None,
+    ) -> RetrievedContext:
+        """The context saved with a retrieval-augmented checkpoint by train.py."""
+        ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        return cls.from_config(ckpt["retrieval_config"], vocab, feature_dir, captions)
+
     def captions_for(
         self,
         neighbor_ids: list[str],

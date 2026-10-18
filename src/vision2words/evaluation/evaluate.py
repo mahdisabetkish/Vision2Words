@@ -62,10 +62,7 @@ def evaluate_checkpoint(
         # Retrieval comes from the training split only; eval images are queries.
         from vision2words.retrieval.context import RetrievedContext, neighbors_for_split
 
-        retrieval_config = torch.load(ckpt_path, map_location="cpu", weights_only=False)[
-            "retrieval_config"
-        ]
-        context = RetrievedContext.from_config(retrieval_config, vocab, feature_dir, captions)
+        context = RetrievedContext.for_checkpoint(ckpt_path, vocab, feature_dir, captions)
         neighbors = neighbors_for_split(context.retriever, feature_dir, split, context.k)
 
     def _feature(image_id: str):

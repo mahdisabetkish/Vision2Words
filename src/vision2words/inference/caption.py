@@ -57,10 +57,7 @@ def caption_image(
         # exclude: search with the live encoder's pooled vector directly.
         from vision2words.retrieval.context import RetrievedContext
 
-        retrieval_config = torch.load(ckpt_path, map_location="cpu", weights_only=False)[
-            "retrieval_config"
-        ]
-        context = RetrievedContext.from_config(retrieval_config, vocab)
+        context = RetrievedContext.for_checkpoint(ckpt_path, vocab)
         neighbor_ids = [n.image_id for n in context.neighbors(pooled.cpu().numpy())]
         features = context.decoder_input(spatial, neighbor_ids)
 
