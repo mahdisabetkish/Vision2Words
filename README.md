@@ -3,6 +3,7 @@
 [![CI](https://github.com/mahdisabetkish/Vision2Words/actions/workflows/ci.yml/badge.svg)](https://github.com/mahdisabetkish/Vision2Words/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-vision2words--app-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/mahdisabetkish/vision2words-app)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-vision2words--decoders-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/mahdisabetkish/vision2words-decoders)
 
 Image captioning on Flickr8k, comparing an LSTM decoder with Bahdanau attention, a Transformer decoder, and a retrieval-augmented Transformer that also reads the captions of similar training images, all on the same frozen EfficientNet-B0 features. A second retrieval-based captioner hands the retrieved captions to a small local language model instead. Behind them are a from-scratch training pipeline and a C++/ONNX Runtime inference path.
 
@@ -16,7 +17,7 @@ Image captioning on Flickr8k, comparing an LSTM decoder with Bahdanau attention,
 
 ## What this is
 
-The original version of this repository was a Flickr8k captioning prototype with a handful of real bugs: the model was trained to reproduce its input instead of predicting the next token, "epochs" meant one batch rather than a full pass over the data, nothing ran on GPU, and the saved checkpoint was never actually loaded back for inference. This repository is a full rebuild on top of that idea: a corrected training pipeline, two additional decoder architectures trained and evaluated against the original one, a C++ inference path that doesn't depend on Python or PyTorch at runtime, a Docker/Nextflow pipeline, and a Hugging Face Space. Version 0.2.0 adds retrieval: a FAISS index over the training images, a decoder that reads what it retrieves, and a text-only captioner built on a local open-weights language model.
+The original version of this repository was a Flickr8k captioning prototype with a handful of real bugs: the model was trained to reproduce its input instead of predicting the next token, "epochs" meant one batch rather than a full pass over the data, nothing ran on GPU, and the saved checkpoint was never actually loaded back for inference. This repository is a full rebuild on top of that idea: a corrected training pipeline, two additional decoder architectures trained and evaluated against the original one, a C++ inference path that doesn't depend on Python or PyTorch at runtime, a Docker/Nextflow pipeline, and a Gradio demo. Version 0.2.0 adds retrieval: a FAISS index over the training images, a decoder that reads what it retrieves, and a text-only captioner built on a local open-weights language model.
 
 Everything below reports real, measured numbers from this codebase, not expected or typical results. If a step in the pipeline hasn't been run and verified, this README says so rather than assuming it works.
 
@@ -165,9 +166,10 @@ Two ways to run it yourself:
 **With Docker (no Python setup):**
 
 ```bash
-docker build -f docker/Dockerfile.app -t vision2words-app .
-docker run --rm -p 7860:7860 vision2words-app
+docker run --rm -p 7860:7860 mahdisabetkish/vision2words-app
 ```
+
+or build the image yourself with `docker build -f docker/Dockerfile.app -t vision2words-app .`.
 
 **From source:**
 
@@ -178,7 +180,7 @@ python app/app.py
 
 Either way, open http://localhost:7860 in a browser. Set `V2W_MODEL_REPO` to load a different model repo, or `V2W_LLM` for a different language model. If the model repo has no retrieval files, the app runs with the other two decoders.
 
-`scripts/push_model_to_hub.py` and `scripts/push_space_to_hub.py` publish the model and the app to Hugging Face. Neither runs automatically.
+`scripts/push_model_to_hub.py` and `scripts/push_space_to_hub.py` publish the model and the app to Hugging Face. Neither runs automatically. The Docker images are published by the `Publish images` workflow (`.github/workflows/publish-images.yml`) when a version tag is pushed: it builds the demo and inference images, captions an example image through the running demo with `scripts/smoke_test_app.py`, and only then pushes `latest` and the version tag to Docker Hub.
 
 ## Training details
 
@@ -215,7 +217,7 @@ tests/                  pytest suite
 cpp/                    CMake project: ONNX Runtime inference, no Python at runtime
 docker/                 training/eval image (CUDA) and a slim CPU inference image
 pipeline/               Nextflow: the whole project, end to end
-app/                    the Gradio Space
+app/                    the Gradio demo (also packaged for Hugging Face Spaces)
 results/                metrics.json, comparison.md, figures, the C++ parity/benchmark report
 scripts/                one-off utilities: pushing to the Hub, the C++/Python parity check
 ```
