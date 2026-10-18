@@ -22,10 +22,12 @@ from vision2words.evaluation.metrics import compute_bleu_cider
 from vision2words.retrieval.context import neighbors_for_split
 from vision2words.retrieval.index import CaptionRetriever
 from vision2words.retrieval.llm_captioner import (
+    CONTEXT_ORDERS,
     DEFAULT_MODEL,
     LLMCaptioner,
     consensus_caption,
     neighbour_captions,
+    rank_by_agreement,
 )
 
 
@@ -36,12 +38,15 @@ def evaluate_rag_llm(
     split: str = "test",
     k: int = 5,
     per_neighbor: int = 2,
+    order: str = "retrieval",
     model_name: str = DEFAULT_MODEL,
     device: str = "cpu",
     batch_size: int = 8,
     limit: int | None = None,
     captioner: LLMCaptioner | None = None,
 ) -> dict:
+    if order not in CONTEXT_ORDERS:
+        raise ValueError(f"order must be one of {CONTEXT_ORDERS}, got {order!r}")
     raw_dir = ensure_data(raw_dir)
     feature_dir = Path(feature_dir)
     captions = load_captions(raw_dir)
@@ -56,6 +61,8 @@ def evaluate_rag_llm(
     }
 
     retrieval_only = {image_id: consensus_caption(context[image_id]) for image_id in image_ids}
+    if order == "agreement":
+        context = {image_id: rank_by_agreement(c) for image_id, c in context.items()}
 
     captioner = captioner or LLMCaptioner(model_name, device)
     llm_preds: dict[str, str] = {}
@@ -73,7 +80,12 @@ def evaluate_rag_llm(
         "llm": captioner.model_name,
         "split": split,
         "num_images": len(image_ids),
-        "retrieval": {"k": k, "captions_per_neighbor": per_neighbor, "index_size": len(retriever)},
+        "retrieval": {
+            "k": k,
+            "captions_per_neighbor": per_neighbor,
+            "order": order,
+            "index_size": len(retriever),
+        },
         "retrieval_only": compute_bleu_cider(retrieval_only, references),
         "rag_llm": {
             **compute_bleu_cider(llm_preds, references),

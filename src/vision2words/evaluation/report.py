@@ -36,15 +36,14 @@ MODEL_LABELS = {
 }
 RESULT_NAMES = ("lstm_baseline", "lstm_attention", "transformer")
 OPTIONAL_DECODER_RESULTS = ("transformer_rag",)
-RAG_LLM_RESULT = "rag_llm"
+# rag_llm.json, plus any other rag_llm_*.json (e.g. a larger language model).
+RAG_LLM_PREFIX = "rag_llm"
 
 
 def build_metrics_json(results_dir: Path) -> dict:
-    names = list(RESULT_NAMES) + [
-        name
-        for name in (*OPTIONAL_DECODER_RESULTS, RAG_LLM_RESULT)
-        if (results_dir / f"{name}.json").exists()
-    ]
+    names = list(RESULT_NAMES)
+    names += [n for n in OPTIONAL_DECODER_RESULTS if (results_dir / f"{n}.json").exists()]
+    names += sorted(p.stem for p in results_dir.glob(f"{RAG_LLM_PREFIX}*.json"))
     combined = {
         name: json.loads((results_dir / f"{name}.json").read_text(encoding="utf-8"))
         for name in names
@@ -77,8 +76,10 @@ def build_comparison_table(combined: dict, results_dir: Path) -> None:
         "| " + " | ".join(columns) + " |",
         "|" + "---|" * len(columns),
     ]
-    for name in (n for n in combined if n != RAG_LLM_RESULT):
-        data = combined[name]
+    llm_runs = [data for data in combined.values() if data["model_type"] == "rag_llm"]
+    for data in combined.values():
+        if data["model_type"] == "rag_llm":
+            continue
         label = MODEL_LABELS[data["model_type"]]
         for decode_key, decode_label in (("greedy", "greedy"), ("beam", "beam k=3")):
             m = data[decode_key]
@@ -87,14 +88,15 @@ def build_comparison_table(combined: dict, results_dir: Path) -> None:
                 f"{decode_label} | {m['bleu1']:.3f} | {m['bleu2']:.3f} | {m['bleu3']:.3f} | "
                 f"{m['bleu4']:.3f} | {m['cider']:.3f} | {m['latency_ms_per_image']:.1f} |"
             )
-    if RAG_LLM_RESULT in combined:
-        lines += _rag_llm_section(combined[RAG_LLM_RESULT])
+    if llm_runs:
+        lines += _rag_llm_section(llm_runs)
     (results_dir / "comparison.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _rag_llm_section(data: dict) -> list[str]:
-    retrieval = data["retrieval"]
-    llm_name = data["llm"].split("/")[-1]
+def _rag_llm_section(runs: list[dict]) -> list[str]:
+    # Every run retrieves with the same k and captions per neighbour, so the
+    # consensus row, which doesn't depend on the language model, is shared.
+    retrieval = runs[0]["retrieval"]
     lines = [
         "",
         "## Retrieval + language model",
@@ -102,20 +104,23 @@ def _rag_llm_section(data: dict) -> list[str]:
         f"Same test images and metric code. Each image retrieves its {retrieval['k']} nearest",
         f"training images and takes {retrieval['captions_per_neighbor']} captions from each.",
         "The consensus row picks the retrieved caption the others agree with most; the",
-        f"language-model row has {llm_name} write a caption from them. Neither sees the",
-        "image itself. Latency is the language model only, batch size",
-        f"{data['rag_llm']['batch_size']}, on {data['rag_llm']['device']}.",
+        "language-model rows have a small instruction-tuned model write a caption from",
+        "them. None of these rows sees the image itself. Context order is how the",
+        "captions are listed in the prompt: as retrieved, or most agreed-on first.",
+        "Latency is the language model only.",
         "",
-        "| System | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | CIDEr | ms/img |",
-        "|---|---|---|---|---|---|---|",
+        "| System | Context order | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | CIDEr | ms/img |",
+        "|---|---|---|---|---|---|---|---|",
     ]
-    for label, m in (
-        ("Retrieval only (consensus caption)", data["retrieval_only"]),
-        (f"Retrieval + {llm_name}", data["rag_llm"]),
-    ):
-        latency = f"{m['latency_ms_per_image']:.1f}" if "latency_ms_per_image" in m else "-"
+    rows = [("Retrieval only (consensus caption)", "-", runs[0]["retrieval_only"], "-")]
+    for run in runs:
+        m = run["rag_llm"]
+        latency = f"{m['latency_ms_per_image']:.1f} ({m['device']}, batch {m['batch_size']})"
+        order = run["retrieval"].get("order", "retrieval")
+        rows.append((f"Retrieval + {run['llm'].split('/')[-1]}", order, m, latency))
+    for label, order, m, latency in rows:
         lines.append(
-            f"| {label} | {m['bleu1']:.3f} | {m['bleu2']:.3f} | {m['bleu3']:.3f} | "
+            f"| {label} | {order} | {m['bleu1']:.3f} | {m['bleu2']:.3f} | {m['bleu3']:.3f} | "
             f"{m['bleu4']:.3f} | {m['cider']:.3f} | {latency} |"
         )
     return lines

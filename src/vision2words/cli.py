@@ -263,6 +263,7 @@ def _add_evaluate_rag_llm(subparsers: argparse._SubParsersAction) -> None:
             split=cfg["eval"]["split"],
             k=cfg["retrieval"]["k"],
             per_neighbor=cfg["retrieval"]["per_neighbor"],
+            order=cfg["retrieval"].get("order", "retrieval"),
             device=cfg["llm"]["device"],
             batch_size=cfg["llm"]["batch_size"],
             limit=args.limit,
@@ -290,7 +291,11 @@ def _add_caption_llm(subparsers: argparse._SubParsersAction) -> None:
 
         from vision2words.models.encoder import EncoderCNN
         from vision2words.retrieval.index import CaptionRetriever
-        from vision2words.retrieval.llm_captioner import LLMCaptioner, neighbour_captions
+        from vision2words.retrieval.llm_captioner import (
+            LLMCaptioner,
+            neighbour_captions,
+            rank_by_agreement,
+        )
         from vision2words.utils.config import load_config
 
         cfg = load_config(args.config, args.overrides)
@@ -305,6 +310,8 @@ def _add_caption_llm(subparsers: argparse._SubParsersAction) -> None:
         context = neighbour_captions(
             retriever, [h.image_id for h in hits], cfg["retrieval"]["per_neighbor"]
         )
+        if cfg["retrieval"].get("order", "retrieval") == "agreement":
+            context = rank_by_agreement(context)
         captioner = LLMCaptioner(cfg["llm"]["model"], device, cfg["llm"]["max_new_tokens"])
         print(captioner.caption(context))
 

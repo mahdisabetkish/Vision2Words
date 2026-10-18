@@ -20,6 +20,7 @@ from vision2words.retrieval.llm_captioner import (  # noqa: E402
     build_user_prompt,
     clean_caption,
     consensus_caption,
+    rank_by_agreement,
 )
 
 
@@ -46,6 +47,14 @@ def test_consensus_picks_the_caption_the_others_agree_with():
     ]
     assert consensus_caption(captions) in captions[:2] + captions[3:]
     assert consensus_caption(captions) != "a man sits at a desk"
+
+
+def test_rank_by_agreement_puts_the_consensus_first_and_keeps_every_caption():
+    captions = ["a man sits at a desk", "a dog runs in the grass", "a black dog in the grass"]
+    ranked = rank_by_agreement(captions)
+    assert ranked[0] == consensus_caption(captions)
+    assert ranked[-1] == "a man sits at a desk"
+    assert sorted(ranked) == sorted(captions)
 
 
 def test_prompt_lists_every_retrieved_caption():

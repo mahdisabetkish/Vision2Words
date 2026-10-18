@@ -66,6 +66,6 @@ def test_retrieval_results_are_added_when_present(tmp_path):
 
     assert "| Transformer + retrieval |" in table
     assert "## Retrieval + language model" in table
-    assert "| Retrieval + Qwen2.5-0.5B-Instruct |" in table
+    assert "| Retrieval + Qwen2.5-0.5B-Instruct | retrieval |" in table
     assert "| Retrieval only (consensus caption) |" in table
     assert json.loads((tmp_path / "metrics.json").read_text())["rag_llm"]["llm"].startswith("Qwen")

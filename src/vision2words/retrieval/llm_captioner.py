@@ -16,14 +16,17 @@ model by evaluate_rag_llm:
 
 - ``consensus_caption`` returns the retrieved caption that agrees most with
   the other retrieved captions, with no generation at all (the nearest-
-  neighbour captioning baseline of Devlin et al., 2015). If the language
-  model can't beat this, it is only paraphrasing its context.
+  neighbour captioning baseline of Devlin et al., 2015). It is the check on
+  whether generation adds anything over picking a retrieved caption.
 - The trained decoders in results/metrics.json, which do see the image.
 
 The default model is Qwen2.5-0.5B-Instruct (Apache-2.0, ~0.5B parameters),
 small enough to run on a CPU-only Hugging Face Space. It runs in float32 on
 GPU as well: the GTX 1080 Ti this project trains on is a Pascal card, whose
 half-precision throughput is a small fraction of its float32 throughput.
+
+The prompt wording (a length hint and one worked example) and the caption
+order were chosen on 200 validation images, never on the test split.
 """
 
 from __future__ import annotations
@@ -37,24 +40,42 @@ from vision2words.retrieval.index import CaptionRetriever
 
 DEFAULT_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
+# How the retrieved captions are ordered in the prompt: as retrieved (best
+# image match first), or by how much each agrees with the others.
+CONTEXT_ORDERS = ("retrieval", "agreement")
+
 SYSTEM_PROMPT = (
     "You write short image captions. You will not see the image. Instead you get "
-    "captions that people wrote for other photos that look very similar to it."
+    "captions that people wrote for other photos that look very similar to it.\n\n"
+    "Example.\n"
+    "Captions of similar photos:\n"
+    "- a brown dog runs across the grass\n"
+    "- a dog running through a grassy field\n"
+    "- a tan dog plays with a ball in a park\n"
+    "- two dogs run on the grass\n"
+    "Caption: a brown dog runs through the grass"
 )
 
 USER_TEMPLATE = (
     "Captions of similar photos:\n{captions}\n\n"
     "Write one caption for the photo, in the same plain style. Keep to what most of "
     "these captions agree on and leave out details only one of them mentions. "
-    "Reply with the caption only."
+    "Use about 8 to 12 words. Reply with the caption only."
 )
 
 
 def neighbour_captions(
     retriever: CaptionRetriever, neighbor_ids: list[str], per_neighbor: int
 ) -> list[str]:
-    """The first ``per_neighbor`` captions of each neighbour, in rank order."""
-    return [c for image_id in neighbor_ids for c in retriever.captions[image_id][:per_neighbor]]
+    """The first ``per_neighbor`` captions of each neighbour, in rank order,
+    lowercased and without punctuation -- the form the references are scored
+    in, and so the form the language model should copy.
+    """
+    return [
+        " ".join(tokenize(c))
+        for image_id in neighbor_ids
+        for c in retriever.captions[image_id][:per_neighbor]
+    ]
 
 
 def build_user_prompt(captions: list[str]) -> str:
@@ -83,21 +104,35 @@ def _token_set(caption: str) -> set[str]:
     return set(tokenize(caption))
 
 
-def consensus_caption(captions: list[str]) -> str:
-    """Pick the retrieved caption with the highest mean word-overlap (Jaccard)
-    with the other retrieved captions -- the one most of the neighbours'
-    descriptions agree with.
-    """
+def agreement_scores(captions: list[str]) -> list[float]:
+    """Each caption's mean word overlap (Jaccard) with the other captions."""
     if len(captions) == 1:
-        return captions[0]
+        return [1.0]
     sets = [_token_set(c) for c in captions]
-    best, best_score = captions[0], -1.0
+    scores = []
     for i, s in enumerate(sets):
         overlaps = [len(s & t) / max(len(s | t), 1) for j, t in enumerate(sets) if j != i]
-        score = sum(overlaps) / len(overlaps)
-        if score > best_score:
-            best, best_score = captions[i], score
-    return best
+        scores.append(sum(overlaps) / len(overlaps))
+    return scores
+
+
+def consensus_caption(captions: list[str]) -> str:
+    """Pick the retrieved caption that agrees most with the other retrieved
+    captions, i.e. the one most of the neighbours' descriptions agree with.
+    Ties go to the higher-ranked neighbour.
+    """
+    scores = agreement_scores(captions)
+    return captions[max(range(len(captions)), key=lambda i: (scores[i], -i))]
+
+
+def rank_by_agreement(captions: list[str]) -> list[str]:
+    """Reorder retrieved captions so the most agreed-on comes first. A small
+    model leans heavily on the first lines of its context, so this puts the
+    most representative caption where it gets read.
+    """
+    scores = agreement_scores(captions)
+    order = sorted(range(len(captions)), key=lambda i: (-scores[i], i))
+    return [captions[i] for i in order]
 
 
 class LLMCaptioner:
