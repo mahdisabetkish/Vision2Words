@@ -1,0 +1,95 @@
+name: Publish images
+
+# Builds the demo and inference images, checks that they actually work, and
+# pushes them to Docker Hub as `latest` and as the release version. Runs on
+# version tags; a manual run from a branch builds and tests but pushes
+# nothing. Needs the DOCKERHUB_USERNAME and DOCKERHUB_TOKEN repository
+# secrets (a Docker Hub access token, not the account password).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  PUSH: ${{ github.ref_type == 'tag' }}
+  VERSION: ${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the demo image
+        run: docker build -f docker/Dockerfile.app -t vision2words-app .
+
+      - name: Start the demo and wait for the page
+        run: |
+          docker run -d --name v2w-app -p 7860:7860 vision2words-app
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:7860 > /dev/null && exit 0
+            sleep 5
+          done
+          echo "the demo did not come up within 5 minutes" && exit 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Caption an example image through the demo's API
+        # The first request downloads the decoders and the retrieval index
+        # from the Hugging Face model repo, so this also checks that repo.
+        run: |
+          pip install gradio_client
+          python scripts/smoke_test_app.py http://localhost:7860 app/examples/2339106348_2df90aa6a9.jpg
+
+      - name: Container log
+        if: always()
+        run: docker logs v2w-app
+
+      - uses: docker/login-action@v3
+        if: env.PUSH == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push
+        if: env.PUSH == 'true'
+        run: |
+          image="${{ secrets.DOCKERHUB_USERNAME }}/vision2words-app"
+          version="${VERSION#v}"
+          for tag in latest "$version"; do
+            docker tag vision2words-app "$image:$tag"
+            docker push "$image:$tag"
+          done
+
+  inference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the C++ inference image
+        run: docker build -f docker/Dockerfile.inference -t vision2words-infer .
+
+      - name: The binary starts and prints its usage
+        run: |
+          out=$(docker run --rm vision2words-infer 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q "^usage: v2w_caption"
+
+      - uses: docker/login-action@v3
+        if: env.PUSH == 'true'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push
+        if: env.PUSH == 'true'
+        run: |
+          image="${{ secrets.DOCKERHUB_USERNAME }}/vision2words-infer"
+          version="${VERSION#v}"
+          for tag in latest "$version"; do
+            docker tag vision2words-infer "$image:$tag"
+            docker push "$image:$tag"
+          done
