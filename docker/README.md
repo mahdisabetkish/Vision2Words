@@ -61,12 +61,21 @@ Then open http://localhost:7860.
 
 ## Published images and status
 
-Both inference images are on Docker Hub:
+Both inference images are on Docker Hub, tagged `latest` and with the release
+version (e.g. `0.2.0`):
 
 ```bash
 docker pull mahdisabetkish/vision2words-infer
 docker pull mahdisabetkish/vision2words-app
 ```
+
+They are published by the `Publish images` workflow
+(`.github/workflows/publish-images.yml`) when a version tag is pushed. The
+workflow builds both images, checks that the C++ binary starts, runs the
+demo container and captions an example image through its API with
+`scripts/smoke_test_app.py`, and pushes only if all of that passes. The
+smoke test needs all three decoders to answer, so it also checks the
+retrieval files in the Hugging Face model repo.
 
 Status on Ubuntu 24.04, CPU only:
 
@@ -76,10 +85,8 @@ Status on Ubuntu 24.04, CPU only:
   (see the root README).
 - `vision2words-app` builds, serves the Gradio page, and returns captions
   from the published model.
-- The retrieval dependencies (`faiss-cpu`, `transformers`) were added to
-  `vision2words-train` and `vision2words-app` after the checks above. Both
-  images need rebuilding before they're pushed again, and the app image
-  should be checked against a model repo that has the retrieval files.
+- Since 0.2.0, `vision2words-app` also carries the retrieval dependencies
+  (`faiss-cpu`, `transformers`) and passes the smoke test above in CI.
 - `vision2words-train` builds in CI (GitHub Actions, `build-docker` job). It
   has not been run on a GPU host, so the training path inside the container
   is untested on real hardware.
