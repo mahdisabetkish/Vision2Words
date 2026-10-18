@@ -15,7 +15,7 @@ llm:
   model: Qwen/Qwen2.5-0.5B-Instruct
   max_new_tokens: 32
   device: cuda
-  batch_size: 8
+  batch_size: 16
 
 eval:
   split: test

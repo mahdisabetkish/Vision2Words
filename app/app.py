@@ -257,6 +257,8 @@ def caption_image(image: Image.Image | None, beam_size: int):
 
 def caption_with_llm(llm_context: list[str]) -> str:
     if not llm_context:
+        if _state and _state["rag"] is None:
+            return _specimen_card(LLM_LABEL, "v2w-sage", "unavailable", NO_RETRIEVAL)
         return _specimen_card(LLM_LABEL, "v2w-sage", "caption a photograph first", "")
     start = time.perf_counter()
     caption = get_llm().caption(llm_context)
@@ -340,7 +342,7 @@ with gr.Blocks(theme=THEME, css=CSS, title="Vision2Words") as demo:
                     gr.HTML(
                         '<div class="v2w-note">The language model never sees the photograph, '
                         "only the retrieved captions. The first request downloads it "
-                        "(about 1 GB), so it takes a while.</div>"
+                        "(about 1 GB), and on CPU each caption takes several seconds.</div>"
                     )
 
     llm_context = gr.State([])
