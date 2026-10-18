@@ -1,0 +1,191 @@
+{
+  "model_type": "rag_llm",
+  "llm": "Qwen/Qwen2.5-1.5B-Instruct",
+  "split": "test",
+  "num_images": 1000,
+  "retrieval": {
+    "k": 5,
+    "captions_per_neighbor": 2,
+    "order": "agreement",
+    "index_size": 6000
+  },
+  "retrieval_only": {
+    "bleu1": 0.5290285495305107,
+    "bleu2": 0.33615906899984255,
+    "bleu3": 0.2093374381431441,
+    "bleu4": 0.1274601950040693,
+    "cider": 0.3478010634533739
+  },
+  "rag_llm": {
+    "bleu1": 0.4727555786195669,
+    "bleu2": 0.2854227760480099,
+    "bleu3": 0.17165199315044477,
+    "bleu4": 0.099964139084332,
+    "cider": 0.27388723003416765,
+    "latency_ms_per_image": 180.207030199992,
+    "batch_size": 16,
+    "device": "cuda"
+  },
+  "sample_predictions": {
+    "1056338697_4f7d7ce270.jpg": {
+      "retrieved": [
+        "a woman in a black dress smiles in front of a silver truck",
+        "four people taking in front of a bus",
+        "a man in a blue shirt and a woman in a white shirt in front of a sign written in an asian language",
+        "a girl wearing a black top is smiling with a silver truck in the background",
+        "a woman carrying a purse and a pink jacket is standing",
+        "a group of four people conversing next to a bus",
+        "two boys fighting in a dirt paved parking lot with another boy watching",
+        "a japanese man and woman are walking past a green car",
+        "a girl looking away while holding a jacket",
+        "young boys one boy is hitting another boy while the third boy smiles in the background"
+      ],
+      "retrieval_only": "a woman in a black dress smiles in front of a silver truck",
+      "rag_llm": "a couple stands near a bus"
+    },
+    "106490881_5a2dd9b7bd.jpg": {
+      "retrieved": [
+        "a boy in white and red is at the beach",
+        "a boy is standing in the ocean with his arms outstretched",
+        "a boy in blue shorts standing in the surf",
+        "a boy in a white tshirt is splashing in shallow water",
+        "a shirtless dark haired boy in gray shorts is running",
+        "a boy in a swimsuit walking in the sand towards the water",
+        "a boy is running towards a seagull on a beach",
+        "two naked boys at a pool",
+        "a skinny young man running with no shirt on",
+        "two naked boys smiling and playing"
+      ],
+      "retrieval_only": "a boy in white and red is at the beach",
+      "rag_llm": "a boy in a swimsuit walks along the beach"
+    },
+    "1082379191_ec1e53f996.jpg": {
+      "retrieved": [
+        "two boys sitting on a boat in the water",
+        "two boys on a boat riding though the water",
+        "a man in a red jacket is sitting on a bench whilst cooking a meal",
+        "a man and a dog sit on a bench near a body of water",
+        "a man is sitting on a bench cooking some food",
+        "a couple sit on the grass with a baby and stroller",
+        "a man and his dog watch the sunset from a bench",
+        "a girl in a pink shirt has jumped into the air",
+        "a couple and an infant being held by the male sitting next to a pond with a near by stroller",
+        "a girl in a pink dress in midair over a large yellow object"
+      ],
+      "retrieval_only": "two boys sitting on a boat in the water",
+      "rag_llm": "two boys on a boat enjoying the water"
+    },
+    "1084040636_97d9633581.jpg": {
+      "retrieved": [
+        "two large white dogs are fighting in the grass",
+        "two white dogs are swimming",
+        "two blond dogs are fighting on a frosty lawn",
+        "two light tan dogs of the same breed but different size are running in the woods",
+        "these dogs appear to be howling outdoors in the snow",
+        "a dog is walking in a tire track in the snow",
+        "a golden dog is running along a tire track that has been carved out in the snow",
+        "two dogs are swimming through deep water within close proximity to one another",
+        "snow dogs howling",
+        "two labs running around near a wooded area"
+      ],
+      "retrieval_only": "two large white dogs are fighting in the grass",
+      "rag_llm": "two small white dogs playfully chase each other in the snowy yard"
+    },
+    "1096395242_fc69f0ae5a.jpg": {
+      "retrieved": [
+        "a young boy and girl sit in a wagon eating corndogs",
+        "a blonde boy and a girl in pajamas with makeup",
+        "a baby and a young boy playing",
+        "a little girl walks and laughs outside",
+        "a young boy crawls with a toddler",
+        "a girl laughs while playing outside",
+        "a little boy with brown curly hair is blowing bubbles with a wand held by a girl",
+        "a girl with her arm around a boy covering his face",
+        "a little boy blows bubbles which are held by a young woman",
+        "two kids eat corndogs outside"
+      ],
+      "retrieval_only": "a young boy and girl sit in a wagon eating corndogs",
+      "rag_llm": "a little boy and girl laugh together outside"
+    },
+    "1107246521_d16a476380.jpg": {
+      "retrieved": [
+        "a black dog is running through the snow with something in its mouth",
+        "a black dog is running across the grass carrying something in its mouth",
+        "a black dog is running outside with a toy in its mouth",
+        "a black dog is looking down at another black dog lying on the grass",
+        "a black dog is chasing another black dog",
+        "a wet black dog is running away from another black dog",
+        "a black dog is being squirted with a jet of water",
+        "a black dog bites at a stream of water on the grass",
+        "a black dog carries a white toy in his mouth and walks on the snowy field",
+        "two big black dogs play with each other in the grass"
+      ],
+      "retrieval_only": "a black dog is running through the snow with something in its mouth",
+      "rag_llm": "a black dog chases another black dog in the snow"
+    },
+    "1119015538_e8e796281e.jpg": {
+      "retrieved": [
+        "a brown and white dog is playing with a toy in a field of green grass and clover",
+        "a brown and white dog retrieving a white plushie toy in a field of clover",
+        "a blond dog runs in the grass holding a stick in its mouth",
+        "a golden colored dog jumps around in the grass while holding a stick in its mouth",
+        "a dog jumps off a wooden porch",
+        "two brown dogs run through the grass",
+        "two brown dogs are running through the green grass",
+        "a gold dog jumping off a wooden porch",
+        "a tan dog is running on pavement with a white dog running on grass beside it",
+        "two dogs one white and one brown run alongside each other near a grassy field"
+      ],
+      "retrieval_only": "a brown and white dog is playing with a toy in a field of green grass and clover",
+      "rag_llm": "a brown and white dog retrieves a toy in a field of green grass and clover"
+    },
+    "1122944218_8eb3607403.jpg": {
+      "retrieved": [
+        "a baby dressed in blue with a watch",
+        "a closeup of a man holding a baby wearing a blue shirt",
+        "a little boy with a yellow shirt is looking at a book someone is holding in front of him",
+        "a man holds a chubby baby with pink cheeks and blue shirt",
+        "a baby wearing a watch",
+        "a child with a skull on his shirt is sitting in front of some plants and a building and is holding onto handlebars",
+        "two blond boys play with legos from a clear plastic bin with a sofa in the background",
+        "a boy wearing yellow reads a book",
+        "a curlyhaired child in a white tshirt grasps the handlebars of a riding toy",
+        "the boys are playing with legos"
+      ],
+      "retrieval_only": "a baby dressed in blue with a watch",
+      "rag_llm": "a boy with blonde hair plays with legos"
+    },
+    "1131800850_89c7ffd477.jpg": {
+      "retrieved": [
+        "a brown and white dog is running on the grass",
+        "a brown and white dog is running with a ball in its mouth on grass in front of a fence",
+        "two black and white dogs on the sandy beach fighting over a long stick",
+        "two black and white dogs fighting in the snow",
+        "a black and white dog runs over the green grass",
+        "a black and brown dog is running with a tennis ball in its mouth",
+        "two dogs carry the same stick in their mouths as they walk on the sand",
+        "two dogs bearing their teeth at each other in the snow",
+        "a dog attempts to squeeze between two gray steps",
+        "a beagle is climbing through some grey stairs"
+      ],
+      "retrieval_only": "a brown and white dog is running on the grass",
+      "rag_llm": "a brown and white dog runs on the grass with a ball in its mouth"
+    },
+    "1131932671_c8d17751b3.jpg": {
+      "retrieved": [
+        "a little boy jumping on the bed",
+        "a boy jumps on the bright colored pillows",
+        "a little boy in a flannel shirt and light pants is thrown in the air",
+        "a curlyhaired boy jumps up on a bed",
+        "a little boy is jumping on a couch that has a yellow and blue cushion resting on it",
+        "a boy playing with toys in a bedroom",
+        "a boy in dark blue clothes is kneeling while holding a toy",
+        "a child leaping from bed to bed behind the back of a man",
+        "a child smiling as they are being thrown in the air by an adult",
+        "a man is standing with his arms folded looking at something while the person behind him is jumping onto one of the two beds in the room"
+      ],
+      "retrieval_only": "a little boy jumping on the bed",
+      "rag_llm": "a little boy jumps on the colorful pillows"
+    }
+  }
+}
