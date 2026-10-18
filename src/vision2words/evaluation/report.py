@@ -35,7 +35,9 @@ MODEL_LABELS = {
     "transformer_rag": "Transformer + retrieval",
 }
 RESULT_NAMES = ("lstm_baseline", "lstm_attention", "transformer")
-OPTIONAL_DECODER_RESULTS = ("transformer_rag",)
+# transformer_rag_shuffled is the same checkpoint evaluated with every image
+# given another image's neighbours (v2w evaluate --shuffle-retrieval).
+OPTIONAL_DECODER_RESULTS = ("transformer_rag", "transformer_rag_shuffled")
 # rag_llm.json, plus any other rag_llm_*.json (e.g. a larger language model).
 RAG_LLM_PREFIX = "rag_llm"
 
@@ -81,6 +83,8 @@ def build_comparison_table(combined: dict, results_dir: Path) -> None:
         if data["model_type"] == "rag_llm":
             continue
         label = MODEL_LABELS[data["model_type"]]
+        if data.get("retrieval_shuffled"):
+            label += " (shuffled neighbours, control)"
         for decode_key, decode_label in (("greedy", "greedy"), ("beam", "beam k=3")):
             m = data[decode_key]
             lines.append(
