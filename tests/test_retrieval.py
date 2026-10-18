@@ -109,3 +109,13 @@ def test_encode_wraps_each_caption_and_truncates_keeping_end(retriever):
     assert len(ids) == 8
     assert ids[0] == vocab.start_id and ids[3] == vocab.end_id
     assert ids[4] == vocab.start_id and ids[7] == vocab.end_id
+
+
+def test_shuffled_control_gives_every_image_someone_elses_neighbours():
+    from vision2words.evaluation.evaluate import _shuffled
+
+    neighbors = {f"{i}.jpg": [f"n{i}"] for i in range(50)}
+    shuffled = _shuffled(neighbors)
+    assert set(shuffled) == set(neighbors)
+    assert all(shuffled[i] != neighbors[i] for i in neighbors)
+    assert sorted(v[0] for v in shuffled.values()) == sorted(v[0] for v in neighbors.values())

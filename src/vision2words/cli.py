@@ -126,6 +126,11 @@ def _add_evaluate(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--split", default="test")
     p.add_argument("--device", default="cpu")
     p.add_argument("--beam-size", type=int, default=3)
+    p.add_argument(
+        "--shuffle-retrieval",
+        action="store_true",
+        help="control run: give each image another image's retrieved captions",
+    )
     p.add_argument("--out", help="write the result as JSON to this path")
 
     def run(args: argparse.Namespace) -> None:
@@ -140,6 +145,7 @@ def _add_evaluate(subparsers: argparse._SubParsersAction) -> None:
             args.split,
             args.device,
             args.beam_size,
+            shuffle_retrieval=args.shuffle_retrieval,
         )
         text = json.dumps(result, indent=2, ensure_ascii=False)
         print(text)
