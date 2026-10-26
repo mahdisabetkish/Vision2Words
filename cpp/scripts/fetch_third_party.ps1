@@ -11,8 +11,8 @@ $ortVersion = "1.20.1"
 New-Item -ItemType Directory -Force -Path "$thirdParty\stb" | Out-Null
 New-Item -ItemType Directory -Force -Path "$thirdParty\nlohmann" | Out-Null
 
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -OutFile "$thirdParty\stb\stb_image.h"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nothings/stb/master/stb_image_resize2.h" -OutFile "$thirdParty\stb\stb_image_resize2.h"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nothings/stb/904aa67e1e2d1dec92959df63e700b166d5c1022/stb_image.h" -OutFile "$thirdParty\stb\stb_image.h"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nothings/stb/904aa67e1e2d1dec92959df63e700b166d5c1022/stb_image_resize2.h" -OutFile "$thirdParty\stb\stb_image_resize2.h"
 Invoke-WebRequest -Uri "https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp" -OutFile "$thirdParty\nlohmann\json.hpp"
 
 $ortZip = "$thirdParty\onnxruntime.zip"
