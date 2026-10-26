@@ -49,3 +49,10 @@ work/
 /prompt.txt
 /human.txt
 /HANDOFF_TO_LINUX.md
+
+# Editor and notebook caches
+.ipynb_checkpoints/
+.mypy_cache/
+.DS_Store
+.idea/
+.vscode/
