@@ -11,8 +11,8 @@ ort_version="1.20.1"
 
 mkdir -p "$third_party/stb" "$third_party/nlohmann"
 
-curl -fsSL "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h" -o "$third_party/stb/stb_image.h"
-curl -fsSL "https://raw.githubusercontent.com/nothings/stb/master/stb_image_resize2.h" -o "$third_party/stb/stb_image_resize2.h"
+curl -fsSL "https://raw.githubusercontent.com/nothings/stb/904aa67e1e2d1dec92959df63e700b166d5c1022/stb_image.h" -o "$third_party/stb/stb_image.h"
+curl -fsSL "https://raw.githubusercontent.com/nothings/stb/904aa67e1e2d1dec92959df63e700b166d5c1022/stb_image_resize2.h" -o "$third_party/stb/stb_image_resize2.h"
 curl -fsSL "https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp" -o "$third_party/nlohmann/json.hpp"
 
 arch="$(uname -m)"
